@@ -1,0 +1,112 @@
+<%- include('partials/header') %>
+<div class="page-head">
+  <div>
+    <h1>Hallo, <%= currentUser.name %></h1>
+    <p class="muted">Deine Abo-Ausgaben auf einen Blick.</p>
+  </div>
+  <a class="btn btn-primary" href="<%= base %>/subscriptions/new">+ Neues Abo</a>
+</div>
+
+<section class="stats">
+  <div class="stat">
+    <span class="stat-label">Pro Monat</span>
+    <span class="stat-value"><%= fmt.money(stats.monthlyTotal) %></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Pro Jahr</span>
+    <span class="stat-value"><%= fmt.money(stats.yearlyTotal) %></span>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Aktive Abos</span>
+    <span class="stat-value"><%= stats.activeCount %></span>
+    <% if (stats.inactiveCount) { %><span class="stat-sub"><%= stats.inactiveCount %> pausiert/gekündigt</span><% } %>
+  </div>
+  <div class="stat">
+    <span class="stat-label">Fällig in 30 Tagen</span>
+    <span class="stat-value"><%= fmt.money(stats.upcomingSum) %></span>
+    <span class="stat-sub"><%= upcoming.length %> Zahlung<%= upcoming.length === 1 ? '' : 'en' %></span>
+  </div>
+</section>
+
+<% if (!stats.activeCount) { %>
+  <section class="card center empty">
+    <h2>Noch keine Abos</h2>
+    <p class="muted">Füge dein erstes Abo hinzu, um deine monatlichen Ausgaben zu sehen.</p>
+    <a class="btn btn-primary" href="<%= base %>/subscriptions/new">Abo hinzufügen</a>
+  </section>
+<% } else { %>
+<div class="grid-2">
+  <section class="card">
+    <h2>Monatlich nach Kategorie</h2>
+    <div class="chart-wrap">
+      <canvas id="categoryChart" data-chart="<%= JSON.stringify(categories) %>" aria-label="Monatliche Ausgaben nach Kategorie" role="img"></canvas>
+    </div>
+    <ul class="legend">
+      <% categories.forEach(function (c) { %>
+        <li>
+          <span class="swatch" data-color="<%= c.color %>"></span>
+          <span class="legend-name"><%= c.name %></span>
+          <span class="num"><%= fmt.money(c.total) %></span>
+          <span class="muted num"><%= Math.round(c.total / stats.monthlyTotal * 100) %>%</span>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Teuerste Abos <span class="muted small">pro Monat</span></h2>
+    <ul class="bars">
+      <% const max = mostExpensive.length ? mostExpensive[0].monthly : 1; %>
+      <% mostExpensive.forEach(function (s) { %>
+        <li>
+          <div class="bar-head">
+            <span><%= s.name %></span>
+            <span class="num"><%= fmt.money(s.monthly) %></span>
+          </div>
+          <div class="bar"><span data-width="<%= Math.max(2, Math.round(s.monthly / max * 100)) %>" data-color="<%= s.category_color || '#9ca3af' %>"></span></div>
+        </li>
+      <% }) %>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Nächste Zahlungen <span class="muted small">30 Tage</span></h2>
+    <% if (!upcoming.length) { %>
+      <p class="muted">Keine Zahlungen in den nächsten 30 Tagen.</p>
+    <% } else { %>
+      <ul class="list">
+        <% upcoming.forEach(function (s) { %>
+          <li>
+            <div>
+              <strong><%= s.name %></strong>
+              <span class="muted small"><%= fmt.date(s.nextPayment) %> · <%= fmt.relDays(s.daysUntilPayment) %></span>
+            </div>
+            <span class="num"><%= fmt.money(s.amount) %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="card">
+    <h2>Kündigungsfristen <span class="muted small">30 Tage</span></h2>
+    <% if (!deadlines.length) { %>
+      <p class="muted">Keine Kündigungsfristen in den nächsten 30 Tagen.</p>
+    <% } else { %>
+      <ul class="list">
+        <% deadlines.forEach(function (s) { %>
+          <li>
+            <div>
+              <strong><%= s.name %></strong>
+              <span class="muted small">kündbar zum <%= fmt.date(s.cancelEffective) %></span>
+            </div>
+            <span class="badge <%= s.daysUntilCancel <= 7 ? 'badge-warn' : '' %>">bis <%= fmt.date(s.cancelBy) %> · <%= fmt.relDays(s.daysUntilCancel) %></span>
+          </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+<script src="<%= base %>/static/vendor/chart.umd.min.js"></script>
+<% } %>
+<%- include('partials/footer') %>

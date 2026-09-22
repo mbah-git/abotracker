@@ -1,0 +1,57 @@
+<%- include('../partials/header') %>
+<div class="page-head">
+  <div>
+    <h1>Benutzerverwaltung</h1>
+    <p class="muted"><%= users.length %> registrierte Benutzer</p>
+  </div>
+</div>
+
+<section class="card table-card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Rolle</th>
+        <th>Status</th>
+        <th class="num">Abos</th>
+        <th class="num">pro Monat</th>
+        <th>Registriert</th>
+        <th>Letzter Login</th>
+        <th><span class="sr-only">Aktionen</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(function (u) { const self = u.id === currentUser.id; %>
+        <tr class="<%= u.is_active ? '' : 'inactive' %>">
+          <td data-label="Name">
+            <strong><%= u.name %></strong><% if (self) { %> <span class="muted small">(du)</span><% } %>
+            <div class="muted small"><%= u.email %></div>
+          </td>
+          <td data-label="Rolle"><span class="badge <%= u.role === 'admin' ? 'badge-accent' : '' %>"><%= u.role === 'admin' ? 'Admin' : 'Benutzer' %></span></td>
+          <td data-label="Status"><span class="badge <%= u.is_active ? 'badge-ok' : 'badge-warn' %>"><%= u.is_active ? 'aktiv' : 'gesperrt' %></span></td>
+          <td data-label="Abos" class="num"><%= u.sub_count %></td>
+          <td data-label="pro Monat" class="num"><%= fmt.money(u.monthly) %></td>
+          <td data-label="Registriert"><%= fmt.date(u.created_at) %></td>
+          <td data-label="Letzter Login"><%= fmt.date(u.last_login_at) %></td>
+          <td class="actions">
+            <% if (!self) { %>
+              <form method="post" action="<%= base %>/admin/users/<%= u.id %>/toggle-active">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-sm"><%= u.is_active ? 'Sperren' : 'Entsperren' %></button>
+              </form>
+              <form method="post" action="<%= base %>/admin/users/<%= u.id %>/toggle-admin" data-confirm="Rolle von <%= u.name %> wirklich ändern?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-sm"><%= u.role === 'admin' ? 'Admin entziehen' : 'Zum Admin' %></button>
+              </form>
+              <form method="post" action="<%= base %>/admin/users/<%= u.id %>/delete" data-confirm="<%= u.name %> und alle Abos endgültig löschen?">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
+              </form>
+            <% } %>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/footer') %>

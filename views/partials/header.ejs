@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title><%= title %> · AboTracker</title>
+  <link rel="icon" href="<%= base %>/static/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="<%= base %>/static/css/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="container topbar-inner">
+      <a class="brand" href="<%= base %>/">
+        <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path fill="currentColor" d="M4 5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5Zm4 3v2h8V8H8Zm0 4v2h8v-2H8Zm0 4v2h5v-2H8Z"/></svg>
+        AboTracker
+      </a>
+      <% if (currentUser) { %>
+        <nav class="nav">
+          <a href="<%= base %>/dashboard" class="<%= path === '/dashboard' ? 'active' : '' %>">Übersicht</a>
+          <a href="<%= base %>/subscriptions" class="<%= path.startsWith('/subscriptions') ? 'active' : '' %>">Meine Abos</a>
+          <% if (currentUser.role === 'admin') { %>
+            <a href="<%= base %>/admin/users" class="<%= path.startsWith('/admin') ? 'active' : '' %>">Benutzer</a>
+          <% } %>
+        </nav>
+        <div class="user-menu">
+          <span class="user-name" title="<%= currentUser.email %>"><%= currentUser.name %></span>
+          <form method="post" action="<%= base %>/logout">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit" class="btn btn-ghost btn-sm">Abmelden</button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  </header>
+  <main class="container main">
+    <% if (flash) { %>
+      <div class="alert alert-<%= flash.type %>" role="status"><%= flash.message %></div>
+    <% } %>

@@ -1,0 +1,24 @@
+<%- include('../partials/header') %>
+<section class="card narrow auth">
+  <h1>Registrieren</h1>
+  <p class="muted">Lege ein kostenloses Konto an.</p>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <form method="post" action="<%= base %>/register" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <label>Name
+      <input type="text" name="name" value="<%= values.name || '' %>" required maxlength="100" autocomplete="name" autofocus>
+    </label>
+    <label>E-Mail
+      <input type="email" name="email" value="<%= values.email || '' %>" required maxlength="190" autocomplete="email">
+    </label>
+    <label>Passwort <span class="hint">mind. 8 Zeichen</span>
+      <input type="password" name="password" required minlength="8" autocomplete="new-password">
+    </label>
+    <label>Passwort wiederholen
+      <input type="password" name="password_confirm" required minlength="8" autocomplete="new-password">
+    </label>
+    <button type="submit" class="btn btn-primary btn-block">Konto erstellen</button>
+  </form>
+  <p class="muted center">Bereits registriert? <a href="<%= base %>/login">Anmelden</a></p>
+</section>
+<%- include('../partials/footer') %>

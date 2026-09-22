@@ -1,0 +1,66 @@
+<%- include('../partials/header') %>
+<div class="page-head">
+  <div>
+    <h1>Meine Abos</h1>
+    <p class="muted"><%= subs.length %> Abo<%= subs.length === 1 ? '' : 's' %> insgesamt</p>
+  </div>
+  <a class="btn btn-primary" href="<%= base %>/subscriptions/new">+ Neues Abo</a>
+</div>
+
+<% if (!subs.length) { %>
+  <section class="card center empty">
+    <h2>Noch keine Abos</h2>
+    <p class="muted">Lege dein erstes Abo an – z. B. Netflix, Spotify oder das Fitnessstudio.</p>
+    <a class="btn btn-primary" href="<%= base %>/subscriptions/new">Abo hinzufügen</a>
+  </section>
+<% } else { %>
+<section class="card table-card">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Kategorie</th>
+        <th class="num">Betrag</th>
+        <th>Zyklus</th>
+        <th class="num">pro Monat</th>
+        <th>Nächste Zahlung</th>
+        <th>Kündigen bis</th>
+        <th><span class="sr-only">Aktionen</span></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% subs.forEach(function (s) { %>
+        <tr class="<%= s.is_active ? '' : 'inactive' %>">
+          <td data-label="Name">
+            <strong><%= s.name %></strong>
+            <% if (!s.is_active) { %><span class="badge">inaktiv</span><% } %>
+            <% if (s.notes) { %><div class="muted small"><%= s.notes %></div><% } %>
+          </td>
+          <td data-label="Kategorie">
+            <% if (s.category_name) { %>
+              <span class="chip"><span class="swatch" data-color="<%= s.category_color %>"></span><%= s.category_name %></span>
+            <% } else { %><span class="muted">–</span><% } %>
+          </td>
+          <td data-label="Betrag" class="num"><%= fmt.money(s.amount) %></td>
+          <td data-label="Zyklus"><%= s.cycleLabel %></td>
+          <td data-label="pro Monat" class="num"><%= fmt.money(s.monthly) %></td>
+          <td data-label="Nächste Zahlung"><%= s.is_active ? fmt.date(s.nextPayment) : '–' %></td>
+          <td data-label="Kündigen bis">
+            <% if (s.is_active && s.cancelBy) { %>
+              <span class="<%= s.daysUntilCancel <= 7 ? 'text-warn' : '' %>"><%= fmt.date(s.cancelBy) %></span>
+            <% } else { %><span class="muted">–</span><% } %>
+          </td>
+          <td class="actions">
+            <a class="btn btn-sm" href="<%= base %>/subscriptions/<%= s.id %>/edit">Bearbeiten</a>
+            <form method="post" action="<%= base %>/subscriptions/<%= s.id %>/delete" data-confirm="„<%= s.name %>“ wirklich löschen?">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
+            </form>
+          </td>
+        </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<% } %>
+<%- include('../partials/footer') %>

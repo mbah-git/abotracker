@@ -1,0 +1,58 @@
+<%- include('../partials/header') %>
+<section class="card form-card">
+  <h1><%= sub ? 'Abo bearbeiten' : 'Neues Abo' %></h1>
+  <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+  <form method="post" action="<%= base %>/subscriptions<%= sub ? '/' + sub.id : '' %>" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+    <label>Name
+      <input type="text" name="name" value="<%= values.name || '' %>" required maxlength="120" placeholder="z. B. Netflix" autofocus>
+    </label>
+
+    <div class="form-row">
+      <label>Betrag (EUR)
+        <input type="text" name="amount" value="<%= values.amount != null ? String(values.amount).replace('.', ',') : '' %>" required inputmode="decimal" pattern="\d+([.,]\d{1,2})?" placeholder="9,99">
+      </label>
+      <label>Abrechnungszyklus
+        <select name="billing_cycle" required>
+          <% Object.keys(cycles).forEach(function (key) { %>
+            <option value="<%= key %>" <%= values.billing_cycle === key ? 'selected' : '' %>><%= cycles[key].label %></option>
+          <% }) %>
+        </select>
+      </label>
+    </div>
+
+    <div class="form-row">
+      <label>Kategorie
+        <select name="category_id">
+          <option value="">– keine –</option>
+          <% categories.forEach(function (c) { %>
+            <option value="<%= c.id %>" <%= Number(values.category_id) === c.id ? 'selected' : '' %>><%= c.name %></option>
+          <% }) %>
+        </select>
+      </label>
+      <label>Nächste Zahlung
+        <input type="date" name="next_payment_date" value="<%= values.next_payment_date || '' %>" required>
+      </label>
+    </div>
+
+    <label>Kündigungsfrist in Tagen <span class="hint">optional, z. B. 30 für einen Monat</span>
+      <input type="number" name="notice_period_days" value="<%= values.notice_period_days ?? '' %>" min="0" max="365" step="1">
+    </label>
+
+    <label>Notizen <span class="hint">optional</span>
+      <textarea name="notes" rows="3" maxlength="500"><%= values.notes || '' %></textarea>
+    </label>
+
+    <label class="checkbox">
+      <input type="checkbox" name="is_active" value="1" <%= Number(values.is_active) ? 'checked' : '' %>>
+      Abo ist aktiv (fließt in die Ausgaben ein)
+    </label>
+
+    <div class="form-actions">
+      <a class="btn btn-ghost" href="<%= base %>/subscriptions">Abbrechen</a>
+      <button type="submit" class="btn btn-primary"><%= sub ? 'Speichern' : 'Hinzufügen' %></button>
+    </div>
+  </form>
+</section>
+<%- include('../partials/footer') %>
