@@ -1,4 +1,5 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const { monthlyCost } = require('../billing');
 const { requireAdmin } = require('../middleware/auth');
@@ -34,7 +35,7 @@ async function targetUser(req) {
     req.flash('error', 'Du kannst dein eigenes Konto hier nicht ändern.');
     return null;
   }
-  const [rows] = await pool.query('SELECT id, name, role, is_active FROM users WHERE id = ?', [id]);
+  const [rows] = await pool.query('SELECT id, email, name, role, is_active FROM users WHERE id = ?', [id]);
   if (!rows[0]) req.flash('error', 'Benutzer nicht gefunden.');
   return rows[0] || null;
 }
@@ -55,6 +56,30 @@ router.post('/users/:id/toggle-admin', async (req, res) => {
     await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, user.id]);
     req.flash('success', `${user.name} ist jetzt ${role === 'admin' ? 'Administrator' : 'normaler Benutzer'}.`);
   }
+  res.redirect(`${res.locals.base}/admin/users`);
+});
+
+router.get('/users/:id/password', async (req, res) => {
+  const user = await targetUser(req);
+  if (!user) return res.redirect(`${res.locals.base}/admin/users`);
+  res.render('admin/password', { title: 'Passwort zurücksetzen', user, error: null });
+});
+
+router.post('/users/:id/password', async (req, res) => {
+  const user = await targetUser(req);
+  if (!user) return res.redirect(`${res.locals.base}/admin/users`);
+
+  const password = String(req.body.password || '');
+  const confirm = String(req.body.password_confirm || '');
+  let error = null;
+  if (password.length < 8) error = 'Das Passwort muss mindestens 8 Zeichen lang sein.';
+  else if (password !== confirm) error = 'Die Passwörter stimmen nicht überein.';
+  if (error) {
+    return res.status(400).render('admin/password', { title: 'Passwort zurücksetzen', user, error });
+  }
+
+  await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [await bcrypt.hash(password, 12), user.id]);
+  req.flash('success', `Das Passwort von ${user.name} wurde geändert.`);
   res.redirect(`${res.locals.base}/admin/users`);
 });
 

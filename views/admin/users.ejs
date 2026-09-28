@@ -39,6 +39,7 @@
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="btn btn-sm"><%= u.is_active ? 'Sperren' : 'Entsperren' %></button>
               </form>
+              <a class="btn btn-sm" href="<%= base %>/admin/users/<%= u.id %>/password">Passwort</a>
               <form method="post" action="<%= base %>/admin/users/<%= u.id %>/toggle-admin" data-confirm="Rolle von <%= u.name %> wirklich ändern?">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="btn btn-sm"><%= u.role === 'admin' ? 'Admin entziehen' : 'Zum Admin' %></button>
