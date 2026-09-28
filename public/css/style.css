@@ -77,7 +77,9 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 .nav a:hover { background: var(--surface-2); color: var(--text); text-decoration: none; }
 .nav a.active { background: var(--accent-soft); color: var(--accent); }
 .user-menu { display: flex; align-items: center; gap: 12px; }
-.user-name { font-weight: 500; }
+.user-name { font-weight: 500; color: var(--text); padding: 6px 10px; border-radius: 8px; }
+.user-name:hover { background: var(--surface-2); text-decoration: none; }
+.user-name.active { background: var(--accent-soft); color: var(--accent); }
 .user-menu form { margin: 0; }
 
 /* Karten & Layout */
@@ -132,7 +134,7 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 .table th, .table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
 .table tr:last-child td { border-bottom: 0; }
 .table tr.inactive td { opacity: .55; }
-.table tr.inactive td.actions { opacity: 1; }
+.table tr.inactive td.actions-cell { opacity: 1; }
 .actions { display: flex; gap: 6px; justify-content: flex-end; flex-wrap: wrap; }
 .actions form { margin: 0; }
 
@@ -199,5 +201,6 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
   .table td::before { content: attr(data-label); color: var(--muted); font-size: .85rem; text-align: left; }
   .table td[data-label="Name"] { display: block; text-align: left; margin-bottom: 4px; }
   .table td[data-label="Name"]::before { content: none; }
-  .table td.actions { justify-content: flex-start; padding-top: 10px; }
+  .table td.actions-cell { display: block; padding-top: 10px; }
+  .table td.actions-cell .actions { justify-content: flex-start; }
 }

@@ -72,6 +72,7 @@ app.use(loadUser);
 const router = express.Router();
 router.get('/', (req, res) => res.redirect(`${base}/${req.user ? 'dashboard' : 'login'}`));
 router.use(require('./src/routes/auth'));
+router.use('/account', require('./src/routes/account'));
 router.use(require('./src/routes/subscriptions'));
 router.use('/admin', require('./src/routes/admin'));
 app.use(base || '/', router);

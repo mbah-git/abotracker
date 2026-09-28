@@ -23,7 +23,7 @@
           <% } %>
         </nav>
         <div class="user-menu">
-          <span class="user-name" title="<%= currentUser.email %>"><%= currentUser.name %></span>
+          <a class="user-name <%= path.startsWith('/account') ? 'active' : '' %>" href="<%= base %>/account/password" title="<%= currentUser.email %> · Passwort ändern"><%= currentUser.name %></a>
           <form method="post" action="<%= base %>/logout">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button type="submit" class="btn btn-ghost btn-sm">Abmelden</button>

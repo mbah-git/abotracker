@@ -33,8 +33,10 @@
           <td data-label="pro Monat" class="num"><%= fmt.money(u.monthly) %></td>
           <td data-label="Registriert"><%= fmt.date(u.created_at) %></td>
           <td data-label="Letzter Login"><%= fmt.date(u.last_login_at) %></td>
-          <td class="actions">
-            <% if (!self) { %>
+          <td class="actions-cell"><div class="actions">
+            <% if (self) { %>
+              <a class="btn btn-sm" href="<%= base %>/account/password">Passwort ändern</a>
+            <% } else { %>
               <form method="post" action="<%= base %>/admin/users/<%= u.id %>/toggle-active">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="btn btn-sm"><%= u.is_active ? 'Sperren' : 'Entsperren' %></button>
@@ -49,7 +51,7 @@
                 <button type="submit" class="btn btn-sm btn-danger">Löschen</button>
               </form>
             <% } %>
-          </td>
+          </div></td>
         </tr>
       <% }) %>
     </tbody>
