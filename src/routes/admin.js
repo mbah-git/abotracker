@@ -1,8 +1,9 @@
 const express = require('express');
-const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const { monthlyCost } = require('../billing');
 const { requireAdmin } = require('../middleware/auth');
+const { validatePassword, validateNewUser, createUser, setPassword } = require('../users');
+const { DEMO_SUBS, addSubscriptions } = require('../demoData');
 
 const router = express.Router();
 router.use(requireAdmin);
@@ -28,6 +29,65 @@ router.get('/users', async (req, res) => {
   });
 });
 
+// ---- Neuen Benutzer erstellen ----
+function renderNewUser(res, values, error, status = 200) {
+  res.status(status).render('admin/user-new', { title: 'Neuen Benutzer erstellen', values, error });
+}
+
+router.get('/users/new', (req, res) => {
+  renderNewUser(res, { role: 'user', demo: false }, null);
+});
+
+router.post('/users/new', async (req, res) => {
+  const { values, password, error } = await validateNewUser(req.body);
+  values.role = req.body.role === 'admin' ? 'admin' : 'user';
+  values.demo = req.body.demo === '1';
+  if (error) return renderNewUser(res, values, error, 400);
+
+  const userId = await createUser({ ...values, password });
+  const count = values.demo ? await addSubscriptions(pool, userId, DEMO_SUBS) : 0;
+  req.flash('success', `${values.name} wurde erstellt${count ? ` (mit ${count} Beispiel-Abos)` : ''}.`);
+  res.redirect(`${res.locals.base}/admin/users`);
+});
+
+// ---- Passwort eines beliebigen Benutzers aendern ----
+async function loadUserList() {
+  const [rows] = await pool.query('SELECT id, name, email FROM users ORDER BY name, id');
+  return rows;
+}
+
+router.get('/password', async (req, res) => {
+  res.render('admin/password', {
+    title: 'Passwort ändern',
+    users: await loadUserList(),
+    selectedId: Number(req.query.user) || null,
+    error: null,
+  });
+});
+
+router.post('/password', async (req, res) => {
+  const users = await loadUserList();
+  const selectedId = Number(req.body.user_id) || null;
+  const user = users.find((u) => u.id === selectedId);
+
+  const error = !user
+    ? 'Bitte wähle einen Benutzer aus.'
+    : validatePassword(String(req.body.password || ''), String(req.body.password_confirm || ''));
+  if (error) {
+    return res.status(400).render('admin/password', { title: 'Passwort ändern', users, selectedId, error });
+  }
+
+  await setPassword(user.id, String(req.body.password));
+  req.flash('success', `Das Passwort von ${user.name} wurde geändert.`);
+  res.redirect(`${res.locals.base}/admin/users`);
+});
+
+// Alte Adresse aus der vorherigen Version weiterleiten
+router.get('/users/:id/password', (req, res) => {
+  res.redirect(`${res.locals.base}/admin/password?user=${Number(req.params.id) || ''}`);
+});
+
+// ---- Aktionen pro Benutzer ----
 // Laedt den Zielbenutzer; das eigene Konto ist geschuetzt, damit sich kein Admin aussperrt.
 async function targetUser(req) {
   const id = Number(req.params.id);
@@ -56,30 +116,6 @@ router.post('/users/:id/toggle-admin', async (req, res) => {
     await pool.query('UPDATE users SET role = ? WHERE id = ?', [role, user.id]);
     req.flash('success', `${user.name} ist jetzt ${role === 'admin' ? 'Administrator' : 'normaler Benutzer'}.`);
   }
-  res.redirect(`${res.locals.base}/admin/users`);
-});
-
-router.get('/users/:id/password', async (req, res) => {
-  const user = await targetUser(req);
-  if (!user) return res.redirect(`${res.locals.base}/admin/users`);
-  res.render('admin/password', { title: 'Passwort zurücksetzen', user, error: null });
-});
-
-router.post('/users/:id/password', async (req, res) => {
-  const user = await targetUser(req);
-  if (!user) return res.redirect(`${res.locals.base}/admin/users`);
-
-  const password = String(req.body.password || '');
-  const confirm = String(req.body.password_confirm || '');
-  let error = null;
-  if (password.length < 8) error = 'Das Passwort muss mindestens 8 Zeichen lang sein.';
-  else if (password !== confirm) error = 'Die Passwörter stimmen nicht überein.';
-  if (error) {
-    return res.status(400).render('admin/password', { title: 'Passwort zurücksetzen', user, error });
-  }
-
-  await pool.query('UPDATE users SET password_hash = ? WHERE id = ?', [await bcrypt.hash(password, 12), user.id]);
-  req.flash('success', `Das Passwort von ${user.name} wurde geändert.`);
   res.redirect(`${res.locals.base}/admin/users`);
 });
 

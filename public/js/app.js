@@ -25,7 +25,7 @@
   if (canvas && window.Chart) {
     var data = JSON.parse(canvas.getAttribute('data-chart') || '[]');
     var styles = getComputedStyle(document.documentElement);
-    var money = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
+    var money = new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' });
 
     new window.Chart(canvas, {
       type: 'doughnut',

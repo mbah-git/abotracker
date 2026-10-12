@@ -45,7 +45,7 @@ function parseForm(body, categories) {
   const notice = values.notice_period_days === '' ? null : Number(values.notice_period_days);
 
   if (!values.name || values.name.length > 120) error = 'Bitte gib einen Namen an (max. 120 Zeichen).';
-  else if (!/^\d+(\.\d{1,2})?$/.test(values.amount) || amount <= 0 || amount >= 100000000) error = 'Bitte gib einen gültigen Betrag an, z. B. 9,99.';
+  else if (!/^\d+(\.\d{1,2})?$/.test(values.amount) || amount <= 0 || amount >= 100000000) error = 'Bitte gib einen gültigen Betrag an, z. B. 9.90.';
   else if (!CYCLES[values.billing_cycle]) error = 'Bitte wähle einen Abrechnungszyklus.';
   else if (values.category_id !== null && !categories.some((c) => c.id === values.category_id)) error = 'Unbekannte Kategorie.';
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(values.next_payment_date) || Number.isNaN(Date.parse(values.next_payment_date))) error = 'Bitte gib ein gültiges Zahlungsdatum an.';

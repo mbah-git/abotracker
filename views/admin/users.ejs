@@ -4,6 +4,10 @@
     <h1>Benutzerverwaltung</h1>
     <p class="muted"><%= users.length %> registrierte Benutzer</p>
   </div>
+  <div class="page-actions">
+    <a class="btn" href="<%= base %>/admin/password">Passwort ändern</a>
+    <a class="btn btn-primary" href="<%= base %>/admin/users/new">+ Neuen Benutzer erstellen</a>
+  </div>
 </div>
 
 <section class="card table-card">
@@ -35,13 +39,13 @@
           <td data-label="Letzter Login"><%= fmt.date(u.last_login_at) %></td>
           <td class="actions-cell"><div class="actions">
             <% if (self) { %>
-              <a class="btn btn-sm" href="<%= base %>/account/password">Passwort ändern</a>
+              <a class="btn btn-sm" href="<%= base %>/admin/password?user=<%= u.id %>">Passwort</a>
             <% } else { %>
               <form method="post" action="<%= base %>/admin/users/<%= u.id %>/toggle-active">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="btn btn-sm"><%= u.is_active ? 'Sperren' : 'Entsperren' %></button>
               </form>
-              <a class="btn btn-sm" href="<%= base %>/admin/users/<%= u.id %>/password">Passwort</a>
+              <a class="btn btn-sm" href="<%= base %>/admin/password?user=<%= u.id %>">Passwort</a>
               <form method="post" action="<%= base %>/admin/users/<%= u.id %>/toggle-admin" data-confirm="Rolle von <%= u.name %> wirklich ändern?">
                 <input type="hidden" name="_csrf" value="<%= csrfToken %>">
                 <button type="submit" class="btn btn-sm"><%= u.role === 'admin' ? 'Admin entziehen' : 'Zum Admin' %></button>

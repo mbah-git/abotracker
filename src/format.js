@@ -1,7 +1,7 @@
-// Formatierungs-Helfer fuer die Views (deutsches Format)
+// Formatierungs-Helfer fuer die Views (Schweizer Format)
 
-const currencyFmt = new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' });
-const dateFmt = new Intl.DateTimeFormat('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+const currencyFmt = new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' });
+const dateFmt = new Intl.DateTimeFormat('de-CH', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 function toDate(value) {
   if (value instanceof Date) return value;

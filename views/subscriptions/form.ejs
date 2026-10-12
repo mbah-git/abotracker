@@ -10,8 +10,8 @@
     </label>
 
     <div class="form-row">
-      <label>Betrag (EUR)
-        <input type="text" name="amount" value="<%= values.amount != null ? String(values.amount).replace('.', ',') : '' %>" required inputmode="decimal" pattern="\d+([.,]\d{1,2})?" placeholder="9,99">
+      <label>Betrag (CHF)
+        <input type="text" name="amount" value="<%= values.amount != null ? values.amount : '' %>" required inputmode="decimal" pattern="\d+([.,]\d{1,2})?" placeholder="9.90">
       </label>
       <label>Abrechnungszyklus
         <select name="billing_cycle" required>
