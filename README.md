@@ -135,7 +135,8 @@ und legt keine doppelten Testdaten an.
 ### 5. E-Mail-Erinnerungen einrichten
 
 1. cPanel → **Email Accounts** → *Create*: z. B. `noreply@bahnima1.com` mit starkem Passwort.
-   Unter *Connect Devices* stehen Server und Port für SMTP (meist `mail.<domain>`, Port 465).
+   Unter *Connect Devices* → *Secure SSL/TLS Settings* stehen Server und Port für SMTP (bei Namecheap
+   die Domain selbst, z. B. `bahnima1.com`, Port 465; `mail.<domain>` hat kein passendes Zertifikat).
 2. Im App-Ordner (`~/repositories/abotracker`) eine Datei `.env` anlegen. Der Cron-Job sieht die
    Umgebungsvariablen aus „Setup Node.js App“ **nicht**, deshalb gehören hier alle Werte rein:
    `DB_*`, `SESSION_SECRET`, `APP_URL`, `SMTP_*`, `MAIL_FROM` (Vorlage: `.env.example`).
