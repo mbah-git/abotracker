@@ -1,0 +1,21 @@
+<%- include('../partials/header') %>
+<section class="card narrow auth">
+  <h1>Passwort vergessen</h1>
+  <% if (!mailEnabled) { %>
+    <p class="muted">Der E-Mail-Versand ist auf diesem Server nicht eingerichtet. Bitte wende dich an den Administrator, damit er dein Passwort zurücksetzt.</p>
+  <% } else if (sent) { %>
+    <div class="alert alert-success">Falls ein Konto mit dieser Adresse existiert, haben wir dir einen Link geschickt.</div>
+    <p class="muted">Schau in dein Postfach (auch im Spam-Ordner). Der Link gilt 60 Minuten.</p>
+  <% } else { %>
+    <p class="muted">Gib die E-Mail-Adresse deines Kontos ein. Wir schicken dir einen Link, mit dem du ein neues Passwort wählen kannst.</p>
+    <form method="post" action="<%= base %>/forgot-password" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <label>E-Mail
+        <input type="email" name="email" value="<%= email %>" required maxlength="190" autocomplete="username" autofocus>
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Link anfordern</button>
+    </form>
+  <% } %>
+  <p class="muted center"><a href="<%= base %>/login">Zurück zur Anmeldung</a></p>
+</section>
+<%- include('../partials/footer') %>

@@ -52,3 +52,14 @@ CREATE TABLE IF NOT EXISTS reminder_log (
   PRIMARY KEY (subscription_id, cancel_by, stage),
   CONSTRAINT fk_reminder_log_subscription FOREIGN KEY (subscription_id) REFERENCES subscriptions (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Einmal-Links zum Zuruecksetzen des Passworts (nur der SHA-256-Hash des Tokens wird gespeichert)
+CREATE TABLE IF NOT EXISTS password_resets (
+  token_hash CHAR(64) NOT NULL,
+  user_id    INT UNSIGNED NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (token_hash),
+  KEY idx_password_resets_user (user_id),
+  CONSTRAINT fk_password_resets_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

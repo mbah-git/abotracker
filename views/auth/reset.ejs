@@ -1,0 +1,26 @@
+<%- include('../partials/header') %>
+<section class="card narrow auth">
+  <h1>Neues Passwort</h1>
+  <% if (!user) { %>
+    <div class="alert alert-error">Dieser Link ist ungültig oder abgelaufen.</div>
+    <p class="muted">Links zum Zurücksetzen gelten 60 Minuten und funktionieren nur einmal. Fordere einfach einen neuen an.</p>
+    <a class="btn btn-primary btn-block" href="<%= base %>/forgot-password">Neuen Link anfordern</a>
+  <% } else { %>
+    <p class="muted">Wähle ein neues Passwort für <%= user.email %>.</p>
+    <% if (error) { %><div class="alert alert-error"><%= error %></div><% } %>
+    <form method="post" action="<%= base %>/reset-password" class="form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="token" value="<%= token %>">
+      <input type="text" name="username" value="<%= user.email %>" autocomplete="username" hidden>
+      <label>Neues Passwort <span class="hint">mind. 8 Zeichen</span>
+        <input type="password" name="password" required minlength="8" autocomplete="new-password" autofocus>
+      </label>
+      <label>Passwort wiederholen
+        <input type="password" name="password_confirm" required minlength="8" autocomplete="new-password">
+      </label>
+      <button type="submit" class="btn btn-primary btn-block">Passwort speichern</button>
+    </form>
+  <% } %>
+  <p class="muted center"><a href="<%= base %>/login">Zurück zur Anmeldung</a></p>
+</section>
+<%- include('../partials/footer') %>

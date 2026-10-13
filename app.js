@@ -8,6 +8,7 @@ const config = require('./src/config');
 const pool = require('./src/db');
 const { migrate } = require('./src/migrations');
 const format = require('./src/format');
+const { isConfigured: isMailConfigured } = require('./src/mailer');
 const { loadUser } = require('./src/middleware/auth');
 const csrf = require('./src/middleware/csrf');
 const flash = require('./src/middleware/flash');
@@ -71,6 +72,7 @@ app.use((req, res, next) => {
     path: base && req.path.startsWith(base) ? req.path.slice(base.length) || '/' : req.path,
     fmt: format,
     allowRegistration: config.allowRegistration,
+    mailEnabled: isMailConfigured(),
     currentUser: null,
     flash: null,
     csrfToken: '',
