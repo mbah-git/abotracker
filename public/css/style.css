@@ -118,6 +118,11 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 .chart-wide { height: 240px; margin-bottom: 8px; }
 .forecast-card { margin-bottom: 16px; }
 .forecast-summary { margin: 0; }
+.filter-bar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; padding: 14px; margin-bottom: 16px; }
+.filter-bar label { margin: 0; }
+.filter-bar select { width: auto; max-width: 100%; }
+.filter-search { flex: 1 1 220px; }
+.filter-actions { display: flex; gap: 6px; }
 .legend, .bars, .list { list-style: none; margin: 0; padding: 0; }
 .legend li { display: grid; grid-template-columns: 12px 1fr auto 44px; gap: 10px; align-items: center; padding: 5px 0; }
 .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--muted); flex: none; }
@@ -205,6 +210,7 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
   .user-menu { margin-left: auto; }
   .user-name { display: none; }
   .form-row { grid-template-columns: 1fr; }
+  .filter-bar label, .filter-bar select { width: 100%; }
   .stat-value { font-size: 1.3rem; }
 
   /* Tabellen als Karten */

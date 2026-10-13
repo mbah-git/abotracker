@@ -114,10 +114,72 @@ router.get('/dashboard', async (req, res) => {
   });
 });
 
+// ---- Suche, Filter, Sortierung (Liste und CSV-Export) ----
+const SORTS = {
+  '': 'Aktive zuerst',
+  name: 'Name',
+  price: 'Teuerste zuerst',
+  payment: 'Nächste Zahlung',
+  deadline: 'Kündigungsfrist',
+  category: 'Kategorie',
+};
+
+function readFilters(query) {
+  const str = (v) => (typeof v === 'string' ? v.trim() : '');
+  const filters = {
+    q: str(query.q).slice(0, 100),
+    cat: str(query.cat),
+    status: ['active', 'inactive'].includes(query.status) ? query.status : '',
+    sort: Object.hasOwn(SORTS, str(query.sort)) ? str(query.sort) : '',
+  };
+  // Nur gesetzte Werte in Links weitergeben (z. B. fuer den CSV-Export)
+  filters.queryString = new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString();
+  filters.active = Boolean(filters.q || filters.cat || filters.status);
+  return filters;
+}
+
+const byName = (a, b) => a.name.localeCompare(b.name, 'de-CH', { sensitivity: 'base' });
+// Termine aufsteigend; ohne Termin bzw. inaktiv ans Ende
+const byDate = (field) => (a, b) => {
+  const x = a.is_active && a[field] ? a[field].getTime() : Infinity;
+  const y = b.is_active && b[field] ? b[field].getTime() : Infinity;
+  return x - y || byName(a, b);
+};
+const SORTERS = {
+  '': (a, b) => b.is_active - a.is_active || byName(a, b),
+  name: byName,
+  price: (a, b) => b.monthly - a.monthly || byName(a, b),
+  payment: byDate('nextPayment'),
+  deadline: byDate('cancelBy'),
+  category: (a, b) => (a.category_name || '~').localeCompare(b.category_name || '~', 'de-CH') || byName(a, b),
+};
+
+function applyFilters(subs, f) {
+  const needle = f.q.toLocaleLowerCase('de-CH');
+  return subs
+    .filter((s) => !needle || `${s.name} ${s.notes || ''}`.toLocaleLowerCase('de-CH').includes(needle))
+    .filter((s) => !f.cat || (f.cat === 'none' ? s.category_id == null : String(s.category_id) === f.cat))
+    .filter((s) => !f.status || (f.status === 'active' ? s.is_active : !s.is_active))
+    .sort(SORTERS[f.sort]);
+}
+
+async function loadOwnSubs(userId) {
+  const [rows] = await pool.query(`${SUB_SELECT} WHERE s.user_id = ?`, [userId]);
+  return rows.map((s) => enrich(s));
+}
+
 // ---- Liste ----
 router.get('/subscriptions', async (req, res) => {
-  const [rows] = await pool.query(`${SUB_SELECT} WHERE s.user_id = ? ORDER BY s.is_active DESC, s.name`, [req.user.id]);
-  res.render('subscriptions/index', { title: 'Meine Abos', subs: rows.map((s) => enrich(s)) });
+  const all = await loadOwnSubs(req.user.id);
+  const filters = readFilters(req.query);
+  res.render('subscriptions/index', {
+    title: 'Meine Abos',
+    subs: applyFilters(all, filters),
+    total: all.length,
+    filters,
+    sorts: SORTS,
+    categories: await loadCategories(),
+  });
 });
 
 // ---- CSV-Export ----
@@ -140,12 +202,12 @@ const EXPORT_COLUMNS = [
 ];
 
 router.get('/subscriptions/export.csv', async (req, res) => {
-  const [rows] = await pool.query(`${SUB_SELECT} WHERE s.user_id = ? ORDER BY s.is_active DESC, s.name`, [req.user.id]);
+  const subs = applyFilters(await loadOwnSubs(req.user.id), readFilters(req.query));
   res
     .type('text/csv; charset=utf-8')
     .attachment(`abos-${formatISO(today())}.csv`)
     .set('Cache-Control', 'no-store')
-    .send(toCsv(rows.map((s) => enrich(s)), EXPORT_COLUMNS));
+    .send(toCsv(subs, EXPORT_COLUMNS));
 });
 
 // ---- Anlegen ----

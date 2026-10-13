@@ -2,21 +2,68 @@
 <div class="page-head">
   <div>
     <h1>Meine Abos</h1>
-    <p class="muted"><%= subs.length %> Abo<%= subs.length === 1 ? '' : 's' %> insgesamt</p>
+    <p class="muted">
+      <% if (filters.active) { %><%= subs.length %> von <%= total %> Abos<% } else { %><%= total %> Abo<%= total === 1 ? '' : 's' %> insgesamt<% } %>
+    </p>
   </div>
   <div class="page-actions">
     <% if (subs.length) { %>
-      <a class="btn" href="<%= base %>/subscriptions/export.csv" download>CSV exportieren</a>
+      <a class="btn" href="<%= base %>/subscriptions/export.csv<%= filters.queryString ? '?' + filters.queryString : '' %>" download
+         title="<%= filters.active ? 'Exportiert nur die gefilterten Abos' : 'Exportiert alle Abos' %>">CSV exportieren</a>
     <% } %>
     <a class="btn btn-primary" href="<%= base %>/subscriptions/new">+ Neues Abo</a>
   </div>
 </div>
 
-<% if (!subs.length) { %>
+<% if (!total) { %>
   <section class="card center empty">
     <h2>Noch keine Abos</h2>
     <p class="muted">Lege dein erstes Abo an – z. B. Netflix, Spotify oder das Fitnessstudio.</p>
     <a class="btn btn-primary" href="<%= base %>/subscriptions/new">Abo hinzufügen</a>
+  </section>
+<% } else { %>
+<form method="get" action="<%= base %>/subscriptions" class="card filter-bar" role="search">
+  <label class="filter-search">
+    <span class="sr-only">Suche</span>
+    <input type="search" name="q" value="<%= filters.q %>" placeholder="Suchen …" title="Sucht in Name und Notizen" maxlength="100">
+  </label>
+  <label>
+    <span class="sr-only">Kategorie</span>
+    <select name="cat" data-autosubmit>
+      <option value="">Alle Kategorien</option>
+      <% categories.forEach(function (c) { %>
+        <option value="<%= c.id %>" <%= filters.cat === String(c.id) ? 'selected' : '' %>><%= c.name %></option>
+      <% }) %>
+      <option value="none" <%= filters.cat === 'none' ? 'selected' : '' %>>Ohne Kategorie</option>
+    </select>
+  </label>
+  <label>
+    <span class="sr-only">Status</span>
+    <select name="status" data-autosubmit>
+      <option value="">Aktive und inaktive</option>
+      <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Nur aktive</option>
+      <option value="inactive" <%= filters.status === 'inactive' ? 'selected' : '' %>>Nur inaktive</option>
+    </select>
+  </label>
+  <label>
+    <span class="sr-only">Sortierung</span>
+    <select name="sort" data-autosubmit>
+      <% Object.keys(sorts).forEach(function (key) { %>
+        <option value="<%= key %>" <%= filters.sort === key ? 'selected' : '' %>>Sortieren: <%= sorts[key] %></option>
+      <% }) %>
+    </select>
+  </label>
+  <div class="filter-actions">
+    <button type="submit" class="btn">Suchen</button>
+    <% if (filters.active || filters.sort) { %><a class="btn btn-ghost" href="<%= base %>/subscriptions">Zurücksetzen</a><% } %>
+  </div>
+</form>
+
+<% if (!subs.length) { %>
+  <section class="card center empty">
+    <h2>Keine Treffer</h2>
+    <p class="muted">Kein Abo passt zu deiner Suche bzw. den Filtern.</p>
+    <a class="btn" href="<%= base %>/subscriptions">Filter zurücksetzen</a>
   </section>
 <% } else { %>
 <section class="card table-card">
@@ -70,5 +117,6 @@
     </tbody>
   </table>
 </section>
+<% } %>
 <% } %>
 <%- include('../partials/footer') %>

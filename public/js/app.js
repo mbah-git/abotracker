@@ -50,6 +50,11 @@
     el.addEventListener('click', function () { window.location.reload(); });
   });
 
+  // Filter in "Meine Abos": Auswahllisten sofort anwenden
+  document.querySelectorAll('select[data-autosubmit]').forEach(function (el) {
+    el.addEventListener('change', function () { el.form.submit(); });
+  });
+
   // Sicherheitsabfrage vor destruktiven Aktionen
   document.querySelectorAll('form[data-confirm]').forEach(function (form) {
     form.addEventListener('submit', function (e) {
