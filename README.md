@@ -128,7 +128,7 @@ und legt keine doppelten Testdaten an.
 4. App neu starten. Der Server läuft mit LiteSpeed; dort beendet der Restart-Button den alten Prozess
    nicht zuverlässig. Sicher ist cPanel → **Terminal**:
    ```bash
-   pkill -u bahnkyge -f lsnode
+   pkill -u <cpanel-user> -f lsnode
    ```
    Kontrolle: Neue Seiten-Inhalte sind sichtbar (statische Dateien allein beweisen den Neustart nicht).
 
@@ -142,7 +142,7 @@ und legt keine doppelten Testdaten an.
 3. App neu starten (siehe oben) und in der Benutzerverwaltung **Test-E-Mail senden** klicken.
 4. cPanel → **Cron Jobs** → *Add New Cron Job*, Einstellung *Once Per Hour* (`0 * * * *`), Befehl:
    ```bash
-   . /home/bahnkyge/nodevenv/repositories/abotracker/20/bin/activate && cd /home/bahnkyge/repositories/abotracker && npm run --silent reminders >> /home/bahnkyge/abotracker-reminders.log 2>&1
+   . /home/<cpanel-user>/nodevenv/repositories/abotracker/20/bin/activate && cd /home/<cpanel-user>/repositories/abotracker && npm run --silent reminders >> /home/<cpanel-user>/abotracker-reminders.log 2>&1
    ```
    Das Skript läuft stündlich, verschickt aber erst ab `REMINDER_HOUR` Uhr Schweizer Zeit und jede
    Erinnerung nur einmal. Ein ausgefallener Lauf wird beim nächsten nachgeholt.
