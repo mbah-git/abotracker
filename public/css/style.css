@@ -115,6 +115,9 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 
 /* Diagramm & Legende */
 .chart-wrap { position: relative; height: 220px; margin-bottom: 16px; }
+.chart-wide { height: 240px; margin-bottom: 8px; }
+.forecast-card { margin-bottom: 16px; }
+.forecast-summary { margin: 0; }
 .legend, .bars, .list { list-style: none; margin: 0; padding: 0; }
 .legend li { display: grid; grid-template-columns: 12px 1fr auto 44px; gap: 10px; align-items: center; padding: 5px 0; }
 .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: var(--muted); flex: none; }

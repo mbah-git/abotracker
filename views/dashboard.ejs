@@ -35,6 +35,18 @@
     <a class="btn btn-primary" href="<%= base %>/subscriptions/new">Abo hinzufügen</a>
   </section>
 <% } else { %>
+<section class="card forecast-card">
+  <h2>Abbuchungen der nächsten 12 Monate <span class="muted small">ab heute · dein Anteil</span></h2>
+  <div class="chart-wrap chart-wide">
+    <canvas id="forecastChart" data-forecast="<%= JSON.stringify(forecast.months) %>" role="img" aria-label="Abbuchungen pro Monat für die nächsten 12 Monate"></canvas>
+  </div>
+  <p class="muted small forecast-summary">
+    Teuerster Monat: <strong><%= forecast.peak.label %></strong> mit <%= fmt.money(forecast.peak.total) %>
+    · Durchschnitt <%= fmt.money(forecast.average) %> pro Monat
+    · Total <%= fmt.money(forecast.yearTotal) %>
+  </p>
+</section>
+
 <div class="grid-2">
   <section class="card">
     <h2>Monatlich nach Kategorie</h2>

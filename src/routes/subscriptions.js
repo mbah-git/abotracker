@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../db');
-const { CYCLES, enrich, formatISO, today } = require('../billing');
+const { CYCLES, enrich, forecast, formatISO, today } = require('../billing');
 const { requireLogin } = require('../middleware/auth');
 const fmt = require('../format');
 const { toCsv } = require('../csv');
@@ -93,6 +93,10 @@ router.get('/dashboard', async (req, res) => {
 
   const mostExpensive = [...active].sort((a, b) => b.monthly - a.monthly).slice(0, 5);
 
+  const months = forecast(rows);
+  const yearTotal = months.reduce((sum, m) => sum + m.total, 0);
+  const peak = months.reduce((max, m) => (m.total > max.total ? m : max), months[0]);
+
   res.render('dashboard', {
     title: 'Übersicht',
     stats: {
@@ -106,6 +110,7 @@ router.get('/dashboard', async (req, res) => {
     upcoming,
     deadlines,
     mostExpensive,
+    forecast: { months, yearTotal, average: yearTotal / months.length, peak },
   });
 });
 

@@ -57,6 +57,53 @@
     });
   });
 
+  // Balkendiagramm: Abbuchungen der naechsten 12 Monate
+  var forecastCanvas = document.getElementById('forecastChart');
+  if (forecastCanvas && window.Chart) {
+    var months = JSON.parse(forecastCanvas.getAttribute('data-forecast') || '[]');
+    var css = getComputedStyle(document.documentElement);
+    var chf = new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF' });
+    var chfShort = new Intl.NumberFormat('de-CH', { style: 'currency', currency: 'CHF', maximumFractionDigits: 0 });
+    var muted = css.getPropertyValue('--muted').trim();
+    var grid = css.getPropertyValue('--border').trim();
+
+    new window.Chart(forecastCanvas, {
+      type: 'bar',
+      data: {
+        labels: months.map(function (m) { return m.label; }),
+        datasets: [{
+          data: months.map(function (m) { return m.total; }),
+          backgroundColor: css.getPropertyValue('--accent').trim() || '#4f46e5',
+          borderRadius: 6,
+          maxBarThickness: 48,
+        }],
+      },
+      options: {
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: {
+              label: function (ctx) { return ' ' + chf.format(ctx.parsed.y); },
+              afterBody: function (items) {
+                var m = months[items[0].dataIndex];
+                var lines = m.items.slice(0, 6).map(function (i) {
+                  return '• ' + i.name + (i.count > 1 ? ' (' + i.count + '×)' : '') + ': ' + chf.format(i.amount);
+                });
+                if (m.items.length > 6) lines.push('• … und ' + (m.items.length - 6) + ' weitere');
+                return lines;
+              },
+            },
+          },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: muted } },
+          y: { beginAtZero: true, grid: { color: grid }, ticks: { color: muted, callback: function (v) { return chfShort.format(v); } } },
+        },
+      },
+    });
+  }
+
   // Donut-Diagramm auf dem Dashboard
   var canvas = document.getElementById('categoryChart');
   if (canvas && window.Chart) {

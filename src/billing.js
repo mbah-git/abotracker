@@ -95,4 +95,45 @@ function enrich(sub, ref = today()) {
   };
 }
 
-module.exports = { CYCLES, monthlyCost, shareOf, stepCycle, nextPaymentDate, enrich, formatISO, parseDate, today };
+// Alle Zahlungstermine eines Abos zwischen from und to (jeweils inklusive)
+function paymentsBetween(sub, from, to) {
+  const anchorDay = parseDate(sub.next_payment_date).getDate();
+  const dates = [];
+  let date = nextPaymentDate(sub.next_payment_date, sub.billing_cycle, from);
+  while (date <= to && dates.length < 60) {
+    dates.push(date);
+    date = stepCycle(date, sub.billing_cycle, anchorDay);
+  }
+  return dates;
+}
+
+const monthLabel = new Intl.DateTimeFormat('de-CH', { month: 'short', year: '2-digit' });
+
+// Tatsaechliche Abbuchungen (eigener Anteil) pro Monat: laufender Monat ab heute plus 11 weitere
+function forecast(subs, months = 12, ref = today()) {
+  const buckets = Array.from({ length: months }, (_, i) => {
+    const start = new Date(ref.getFullYear(), ref.getMonth() + i, 1);
+    return { label: monthLabel.format(start).replace('.', ''), total: 0, items: [] };
+  });
+  const end = new Date(ref.getFullYear(), ref.getMonth() + months, 0);
+  for (const sub of subs) {
+    if (!sub.is_active) continue;
+    const myAmount = Number(sub.amount) / shareOf(sub);
+    for (const date of paymentsBetween(sub, ref, end)) {
+      const b = buckets[(date.getFullYear() - ref.getFullYear()) * 12 + date.getMonth() - ref.getMonth()];
+      b.total += myAmount;
+      // Mehrere Abbuchungen desselben Abos im Monat (z. B. woechentlich) zusammenfassen
+      const item = b.items.find((x) => x.id === sub.id && x.name === sub.name);
+      if (item) { item.amount += myAmount; item.count++; } else b.items.push({ id: sub.id, name: sub.name, amount: myAmount, count: 1 });
+    }
+  }
+  for (const b of buckets) {
+    b.total = Math.round(b.total * 100) / 100;
+    b.items = b.items
+      .sort((a, c) => c.amount - a.amount)
+      .map(({ name, amount, count }) => ({ name, amount: Math.round(amount * 100) / 100, count }));
+  }
+  return buckets;
+}
+
+module.exports = { CYCLES, monthlyCost, shareOf, stepCycle, nextPaymentDate, paymentsBetween, forecast, enrich, formatISO, parseDate, today };
