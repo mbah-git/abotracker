@@ -11,7 +11,15 @@ Einfache Web-App, um Abonnements und die monatlichen Ausgaben dafür im Blick zu
 - Abrechnungszyklen wöchentlich / monatlich / quartalsweise / jährlich, alles auf Monatskosten umgerechnet
 - Dashboard: Kosten pro Monat/Jahr, Donut-Diagramm nach Kategorie, teuerste Abos
 - Nächste Zahlungen (rollt automatisch weiter) und anstehende Kündigungsfristen
-- Admin-Bereich: Benutzer sperren/entsperren, zum Admin machen, löschen
+- Admin-Bereich: Benutzer anlegen, sperren/entsperren, zum Admin machen, Passwörter setzen, löschen
+- Installierbar als App (PWA) auf Handy und PC, mit Offline-Hinweis
+
+## PWA
+
+- `manifest.webmanifest` und `sw.js` werden von `app.js` unter `BASE_PATH` ausgeliefert, die Icons liegen in `public/icons/`.
+- Der Service Worker cached nur statische Dateien. Seiten kommen immer frisch vom Server, weil sie
+  Benutzerdaten und CSRF-Tokens enthalten. Ohne Verbindung erscheint `public/offline.html`.
+- Werden Dateien in der Liste `PRECACHE` in `public/sw.js` geändert, `VERSION` dort hochzählen.
 
 ## Projektstruktur
 

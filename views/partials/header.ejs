@@ -6,8 +6,16 @@
   <title><%= title %> · AboTracker</title>
   <link rel="icon" href="<%= base %>/static/favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="<%= base %>/static/css/style.css">
+  <link rel="manifest" href="<%= base %>/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="<%= base %>/static/icons/apple-touch-icon.png">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#1b1e27" media="(prefers-color-scheme: dark)">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="AboTracker">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
 </head>
-<body>
+<body data-base="<%= base %>">
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="<%= base %>/">
@@ -23,11 +31,16 @@
           <% } %>
         </nav>
         <div class="user-menu">
+          <button type="button" id="installBtn" class="btn btn-sm" hidden>App installieren</button>
           <a class="user-name <%= path.startsWith('/account') ? 'active' : '' %>" href="<%= base %>/account/password" title="<%= currentUser.email %> · Passwort ändern"><%= currentUser.name %></a>
           <form method="post" action="<%= base %>/logout">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button type="submit" class="btn btn-ghost btn-sm">Abmelden</button>
           </form>
+        </div>
+      <% } else { %>
+        <div class="user-menu">
+          <button type="button" id="installBtn" class="btn btn-sm" hidden>App installieren</button>
         </div>
       <% } %>
     </div>

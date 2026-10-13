@@ -33,6 +33,34 @@ app.use(helmet({
 app.use(`${base}/static`, express.static(path.join(__dirname, 'public'), { maxAge: '7d' }));
 app.use(`${base}/static/vendor`, express.static(path.join(__dirname, 'node_modules/chart.js/dist'), { maxAge: '30d' }));
 
+// ---- PWA: Manifest und Service Worker (vor der Session, damit keine leeren Sessions entstehen) ----
+app.get(`${base}/manifest.webmanifest`, (req, res) => {
+  const icon = (file, size, purpose) => ({ src: `${base}/static/icons/${file}`, sizes: `${size}x${size}`, type: 'image/png', purpose });
+  res.type('application/manifest+json').set('Cache-Control', 'public, max-age=86400').send(JSON.stringify({
+    id: `${base}/`,
+    name: 'AboTracker',
+    short_name: 'AboTracker',
+    description: 'Abonnements und monatliche Ausgaben im Blick behalten',
+    lang: 'de-CH',
+    start_url: `${base}/dashboard`,
+    scope: `${base}/`,
+    display: 'standalone',
+    background_color: '#f5f6fa',
+    theme_color: '#4f46e5',
+    icons: [
+      icon('icon-192.png', 192, 'any'),
+      icon('icon-512.png', 512, 'any'),
+      icon('maskable-192.png', 192, 'maskable'),
+      icon('maskable-512.png', 512, 'maskable'),
+    ],
+  }));
+});
+
+// Der Service Worker muss unterhalb von BASE_PATH liegen, damit er die ganze App abdeckt
+app.get(`${base}/sw.js`, (req, res) => {
+  res.set('Cache-Control', 'no-cache').sendFile(path.join(__dirname, 'public', 'sw.js'));
+});
+
 app.use(express.urlencoded({ extended: false, limit: '20kb' }));
 
 // Standardwerte fuer die Views, damit auch Fehlerseiten immer rendern koennen
