@@ -7,7 +7,7 @@ Einfache Web-App, um Abonnements und die monatlichen Ausgaben dafür im Blick zu
 ## Funktionen
 
 - Registrierung & Login (bcrypt-Passwörter, Sessions in der Datenbank, CSRF-Schutz, Rate-Limit)
-- Abos anlegen, bearbeiten, löschen, pausieren
+- Abos anlegen, bearbeiten, löschen, pausieren, als CSV exportieren (für Excel Schweiz)
 - Abrechnungszyklen wöchentlich / monatlich / quartalsweise / jährlich, alles auf Monatskosten umgerechnet
 - Dashboard: Kosten pro Monat/Jahr, Donut-Diagramm nach Kategorie, teuerste Abos
 - Nächste Zahlungen (rollt automatisch weiter) und anstehende Kündigungsfristen

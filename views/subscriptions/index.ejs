@@ -4,7 +4,12 @@
     <h1>Meine Abos</h1>
     <p class="muted"><%= subs.length %> Abo<%= subs.length === 1 ? '' : 's' %> insgesamt</p>
   </div>
-  <a class="btn btn-primary" href="<%= base %>/subscriptions/new">+ Neues Abo</a>
+  <div class="page-actions">
+    <% if (subs.length) { %>
+      <a class="btn" href="<%= base %>/subscriptions/export.csv" download>CSV exportieren</a>
+    <% } %>
+    <a class="btn btn-primary" href="<%= base %>/subscriptions/new">+ Neues Abo</a>
+  </div>
 </div>
 
 <% if (!subs.length) { %>

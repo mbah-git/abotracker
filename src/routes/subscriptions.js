@@ -2,6 +2,8 @@ const express = require('express');
 const pool = require('../db');
 const { CYCLES, enrich, formatISO, today } = require('../billing');
 const { requireLogin } = require('../middleware/auth');
+const fmt = require('../format');
+const { toCsv } = require('../csv');
 
 const router = express.Router();
 router.use(requireLogin);
@@ -108,6 +110,32 @@ router.get('/dashboard', async (req, res) => {
 router.get('/subscriptions', async (req, res) => {
   const [rows] = await pool.query(`${SUB_SELECT} WHERE s.user_id = ? ORDER BY s.is_active DESC, s.name`, [req.user.id]);
   res.render('subscriptions/index', { title: 'Meine Abos', subs: rows.map((s) => enrich(s)) });
+});
+
+// ---- CSV-Export ----
+const money = (n) => Math.round(n * 100) / 100;
+const EXPORT_COLUMNS = [
+  { header: 'Name', value: (s) => s.name },
+  { header: 'Kategorie', value: (s) => s.category_name },
+  { header: 'Betrag (CHF)', value: (s) => money(s.amount).toFixed(2) },
+  { header: 'Zyklus', value: (s) => s.cycleLabel },
+  { header: 'Pro Monat (CHF)', value: (s) => money(s.monthly).toFixed(2) },
+  { header: 'Pro Jahr (CHF)', value: (s) => money(s.monthly * 12).toFixed(2) },
+  { header: 'Nächste Zahlung', value: (s) => (s.is_active ? fmt.date(s.nextPayment) : null) },
+  { header: 'Kündigungsfrist (Tage)', value: (s) => s.notice_period_days },
+  { header: 'Kündigen bis', value: (s) => (s.is_active && s.cancelBy ? fmt.date(s.cancelBy) : null) },
+  { header: 'Kündbar zum', value: (s) => (s.is_active && s.cancelEffective ? fmt.date(s.cancelEffective) : null) },
+  { header: 'Status', value: (s) => (s.is_active ? 'aktiv' : 'inaktiv') },
+  { header: 'Notizen', value: (s) => s.notes },
+];
+
+router.get('/subscriptions/export.csv', async (req, res) => {
+  const [rows] = await pool.query(`${SUB_SELECT} WHERE s.user_id = ? ORDER BY s.is_active DESC, s.name`, [req.user.id]);
+  res
+    .type('text/csv; charset=utf-8')
+    .attachment(`abos-${formatISO(today())}.csv`)
+    .set('Cache-Control', 'no-store')
+    .send(toCsv(rows.map((s) => enrich(s)), EXPORT_COLUMNS));
 });
 
 // ---- Anlegen ----
