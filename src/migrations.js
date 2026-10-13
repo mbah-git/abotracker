@@ -6,6 +6,7 @@ const path = require('path');
 // Spalten, die nach der ersten Version dazugekommen sind: [Tabelle, Spalte, Definition]
 const ADDED_COLUMNS = [
   ['users', 'reminders_enabled', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER is_active'],
+  ['subscriptions', 'shared_with', 'TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER amount'],
 ];
 
 function schemaStatements() {

@@ -46,7 +46,10 @@
               <span class="chip"><span class="swatch" data-color="<%= s.category_color %>"></span><%= s.category_name %></span>
             <% } else { %><span class="muted">–</span><% } %>
           </td>
-          <td data-label="Betrag" class="num"><%= fmt.money(s.amount) %></td>
+          <td data-label="Betrag" class="num"><div>
+            <%= fmt.money(s.amount) %>
+            <% if (s.share > 1) { %><div class="muted small" title="Geteilt mit <%= s.share %> Personen">÷ <%= s.share %> = <%= fmt.money(s.myAmount) %></div><% } %>
+          </div></td>
           <td data-label="Zyklus"><%= s.cycleLabel %></td>
           <td data-label="pro Monat" class="num"><%= fmt.money(s.monthly) %></td>
           <td data-label="Nächste Zahlung"><%= s.is_active ? fmt.date(s.nextPayment) : '–' %></td>

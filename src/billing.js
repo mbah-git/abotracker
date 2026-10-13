@@ -7,8 +7,14 @@ const CYCLES = {
   yearly: { label: 'Jährlich', perMonth: 1 / 12 },
 };
 
-function monthlyCost(amount, cycle) {
-  return Number(amount) * CYCLES[cycle].perMonth;
+// Anzahl Personen, mit denen ein Abo geteilt wird (mind. 1)
+function shareOf(sub) {
+  return Math.max(1, Number(sub.shared_with) || 1);
+}
+
+// Monatskosten; mit shared_with nur der eigene Anteil
+function monthlyCost(amount, cycle, sharedWith = 1) {
+  return (Number(amount) * CYCLES[cycle].perMonth) / Math.max(1, Number(sharedWith) || 1);
 }
 
 // Datumswerte als "YYYY-MM-DD" in lokaler Zeit behandeln
@@ -36,17 +42,20 @@ function addMonthsClamped(date, months, anchorDay) {
   return target;
 }
 
+// Naechster Termin nach date gemaess Zyklus; anchorDay haelt z. B. den 31. ueber kurze Monate hinweg
+function stepCycle(date, cycle, anchorDay) {
+  if (cycle === 'weekly') return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 7);
+  if (cycle === 'monthly') return addMonthsClamped(date, 1, anchorDay);
+  if (cycle === 'quarterly') return addMonthsClamped(date, 3, anchorDay);
+  return addMonthsClamped(date, 12, anchorDay);
+}
+
 // Liefert das naechste Zahlungsdatum >= heute, ausgehend vom gespeicherten Datum.
 function nextPaymentDate(storedDate, cycle, ref = today()) {
   let date = parseDate(storedDate);
   const anchorDay = date.getDate();
   let guard = 0;
-  while (date < ref && guard++ < 1000) {
-    if (cycle === 'weekly') date = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 7);
-    else if (cycle === 'monthly') date = addMonthsClamped(date, 1, anchorDay);
-    else if (cycle === 'quarterly') date = addMonthsClamped(date, 3, anchorDay);
-    else date = addMonthsClamped(date, 12, anchorDay);
-  }
+  while (date < ref && guard++ < 1000) date = stepCycle(date, cycle, anchorDay);
   return date;
 }
 
@@ -70,11 +79,14 @@ function enrich(sub, ref = today()) {
     }
     cancelEffective = target;
   }
+  const share = shareOf(sub);
   return {
     ...sub,
     amount: Number(sub.amount),
+    share,
+    myAmount: Number(sub.amount) / share,
     cycleLabel: CYCLES[sub.billing_cycle].label,
-    monthly: monthlyCost(sub.amount, sub.billing_cycle),
+    monthly: monthlyCost(sub.amount, sub.billing_cycle, share),
     nextPayment: next,
     daysUntilPayment: daysBetween(ref, next),
     cancelBy,
@@ -83,4 +95,4 @@ function enrich(sub, ref = today()) {
   };
 }
 
-module.exports = { CYCLES, monthlyCost, nextPaymentDate, enrich, formatISO, parseDate, today };
+module.exports = { CYCLES, monthlyCost, shareOf, stepCycle, nextPaymentDate, enrich, formatISO, parseDate, today };

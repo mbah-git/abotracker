@@ -81,7 +81,7 @@
               <strong><%= s.name %></strong>
               <span class="muted small"><%= fmt.date(s.nextPayment) %> · <%= fmt.relDays(s.daysUntilPayment) %></span>
             </div>
-            <span class="num"><%= fmt.money(s.amount) %></span>
+            <span class="num"><%= fmt.money(s.myAmount) %><% if (s.share > 1) { %><span class="muted small" title="Dein Anteil, geteilt mit <%= s.share %> Personen"> ÷<%= s.share %></span><% } %></span>
           </li>
         <% }) %>
       </ul>

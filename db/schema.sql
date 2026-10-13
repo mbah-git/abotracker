@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   category_id        INT UNSIGNED NULL,
   name               VARCHAR(120) NOT NULL,
   amount             DECIMAL(10,2) NOT NULL,
+  shared_with        TINYINT UNSIGNED NOT NULL DEFAULT 1,
   billing_cycle      ENUM('weekly','monthly','quarterly','yearly') NOT NULL DEFAULT 'monthly',
   next_payment_date  DATE NOT NULL,
   notice_period_days SMALLINT UNSIGNED NULL,

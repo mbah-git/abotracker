@@ -36,6 +36,10 @@
       </label>
     </div>
 
+    <label>Geteilt mit <span class="hint">Anzahl Personen inkl. dir, z. B. 4 bei Spotify Family mit 3 anderen; 1 = nicht geteilt</span>
+      <input type="number" name="shared_with" value="<%= values.shared_with ?? 1 %>" min="1" max="20" step="1" required>
+    </label>
+
     <label>Kündigungsfrist in Tagen <span class="hint">optional, z. B. 30 für einen Monat</span>
       <input type="number" name="notice_period_days" value="<%= values.notice_period_days ?? '' %>" min="0" max="365" step="1">
     </label>

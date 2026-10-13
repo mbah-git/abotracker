@@ -34,6 +34,7 @@ function parseForm(body, categories) {
   const values = {
     name: String(body.name || '').trim(),
     amount: String(body.amount || '').trim().replace(',', '.'),
+    shared_with: String(body.shared_with ?? '1').trim() || '1',
     billing_cycle: String(body.billing_cycle || ''),
     category_id: body.category_id ? Number(body.category_id) : null,
     next_payment_date: String(body.next_payment_date || ''),
@@ -45,9 +46,11 @@ function parseForm(body, categories) {
   let error = null;
   const amount = Number(values.amount);
   const notice = values.notice_period_days === '' ? null : Number(values.notice_period_days);
+  const sharedWith = Number(values.shared_with);
 
   if (!values.name || values.name.length > 120) error = 'Bitte gib einen Namen an (max. 120 Zeichen).';
   else if (!/^\d+(\.\d{1,2})?$/.test(values.amount) || amount <= 0 || amount >= 100000000) error = 'Bitte gib einen gültigen Betrag an, z. B. 9.90.';
+  else if (!Number.isInteger(sharedWith) || sharedWith < 1 || sharedWith > 20) error = 'Geteilt mit: bitte eine Zahl von 1 bis 20 angeben (1 = nicht geteilt).';
   else if (!CYCLES[values.billing_cycle]) error = 'Bitte wähle einen Abrechnungszyklus.';
   else if (values.category_id !== null && !categories.some((c) => c.id === values.category_id)) error = 'Unbekannte Kategorie.';
   else if (!/^\d{4}-\d{2}-\d{2}$/.test(values.next_payment_date) || Number.isNaN(Date.parse(values.next_payment_date))) error = 'Bitte gib ein gültiges Zahlungsdatum an.';
@@ -57,7 +60,7 @@ function parseForm(body, categories) {
   return {
     values,
     error,
-    data: { ...values, amount, notice_period_days: notice, notes: values.notes || null },
+    data: { ...values, amount, shared_with: sharedWith, notice_period_days: notice, notes: values.notes || null },
   };
 }
 
@@ -97,7 +100,7 @@ router.get('/dashboard', async (req, res) => {
       yearlyTotal: monthlyTotal * 12,
       activeCount: active.length,
       inactiveCount: subs.length - active.length,
-      upcomingSum: upcoming.reduce((sum, s) => sum + s.amount, 0),
+      upcomingSum: upcoming.reduce((sum, s) => sum + s.myAmount, 0),
     },
     categories,
     upcoming,
@@ -118,9 +121,11 @@ const EXPORT_COLUMNS = [
   { header: 'Name', value: (s) => s.name },
   { header: 'Kategorie', value: (s) => s.category_name },
   { header: 'Betrag (CHF)', value: (s) => money(s.amount).toFixed(2) },
+  { header: 'Geteilt mit (Personen)', value: (s) => s.share },
+  { header: 'Dein Anteil (CHF)', value: (s) => money(s.myAmount).toFixed(2) },
   { header: 'Zyklus', value: (s) => s.cycleLabel },
-  { header: 'Pro Monat (CHF)', value: (s) => money(s.monthly).toFixed(2) },
-  { header: 'Pro Jahr (CHF)', value: (s) => money(s.monthly * 12).toFixed(2) },
+  { header: 'Pro Monat, dein Anteil (CHF)', value: (s) => money(s.monthly).toFixed(2) },
+  { header: 'Pro Jahr, dein Anteil (CHF)', value: (s) => money(s.monthly * 12).toFixed(2) },
   { header: 'Nächste Zahlung', value: (s) => (s.is_active ? fmt.date(s.nextPayment) : null) },
   { header: 'Kündigungsfrist (Tage)', value: (s) => s.notice_period_days },
   { header: 'Kündigen bis', value: (s) => (s.is_active && s.cancelBy ? fmt.date(s.cancelBy) : null) },
@@ -143,7 +148,7 @@ router.get('/subscriptions/new', async (req, res) => {
   res.render('subscriptions/form', {
     title: 'Neues Abo',
     sub: null,
-    values: { billing_cycle: 'monthly', is_active: 1, next_payment_date: formatISO(today()) },
+    values: { billing_cycle: 'monthly', is_active: 1, shared_with: 1, next_payment_date: formatISO(today()) },
     categories: await loadCategories(),
     cycles: CYCLES,
     error: null,
@@ -158,9 +163,9 @@ router.post('/subscriptions', async (req, res) => {
   }
   await pool.query(
     `INSERT INTO subscriptions
-       (user_id, category_id, name, amount, billing_cycle, next_payment_date, notice_period_days, is_active, notes)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    [req.user.id, data.category_id, data.name, data.amount, data.billing_cycle, data.next_payment_date,
+       (user_id, category_id, name, amount, shared_with, billing_cycle, next_payment_date, notice_period_days, is_active, notes)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    [req.user.id, data.category_id, data.name, data.amount, data.shared_with, data.billing_cycle, data.next_payment_date,
       data.notice_period_days, data.is_active, data.notes]
   );
   req.flash('success', `„${data.name}“ wurde hinzugefügt.`);
@@ -191,10 +196,10 @@ router.post('/subscriptions/:id', async (req, res) => {
     return res.status(400).render('subscriptions/form', { title: `${sub.name} bearbeiten`, sub, values, categories, cycles: CYCLES, error });
   }
   await pool.query(
-    `UPDATE subscriptions SET category_id = ?, name = ?, amount = ?, billing_cycle = ?, next_payment_date = ?,
+    `UPDATE subscriptions SET category_id = ?, name = ?, amount = ?, shared_with = ?, billing_cycle = ?, next_payment_date = ?,
        notice_period_days = ?, is_active = ?, notes = ?
      WHERE id = ? AND user_id = ?`,
-    [data.category_id, data.name, data.amount, data.billing_cycle, data.next_payment_date,
+    [data.category_id, data.name, data.amount, data.shared_with, data.billing_cycle, data.next_payment_date,
       data.notice_period_days, data.is_active, data.notes, sub.id, req.user.id]
   );
   req.flash('success', `„${data.name}“ wurde gespeichert.`);

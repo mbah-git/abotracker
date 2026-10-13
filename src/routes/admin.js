@@ -19,10 +19,10 @@ router.get('/users', async (req, res) => {
     GROUP BY u.id, u.email, u.name, u.role, u.is_active, u.reminders_enabled, u.created_at, u.last_login_at
     ORDER BY u.created_at, u.id`);
 
-  const [subs] = await pool.query('SELECT user_id, amount, billing_cycle FROM subscriptions WHERE is_active = 1');
+  const [subs] = await pool.query('SELECT user_id, amount, shared_with, billing_cycle FROM subscriptions WHERE is_active = 1');
   const monthlyByUser = new Map();
   for (const s of subs) {
-    monthlyByUser.set(s.user_id, (monthlyByUser.get(s.user_id) || 0) + monthlyCost(s.amount, s.billing_cycle));
+    monthlyByUser.set(s.user_id, (monthlyByUser.get(s.user_id) || 0) + monthlyCost(s.amount, s.billing_cycle, s.shared_with));
   }
 
   res.render('admin/users', {
