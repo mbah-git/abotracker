@@ -98,6 +98,10 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 .page-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
 .page-head p { margin: 0; }
 .page-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.page-actions form { margin: 0; }
+.section-title { font-size: 1rem; margin: 8px 0 0; }
+.divider { border: 0; border-top: 1px solid var(--border); margin: 24px 0 16px; }
+.card-hint { margin: -10px 0 12px; }
 .grid-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 
 /* Kennzahlen */

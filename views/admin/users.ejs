@@ -5,6 +5,10 @@
     <p class="muted"><%= users.length %> registrierte Benutzer</p>
   </div>
   <div class="page-actions">
+    <form method="post" action="<%= base %>/admin/test-mail">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <button type="submit" class="btn" title="Schickt eine Beispiel-Erinnerung an <%= currentUser.email %>">Test-E-Mail senden</button>
+    </form>
     <a class="btn" href="<%= base %>/admin/password">Passwort ändern</a>
     <a class="btn btn-primary" href="<%= base %>/admin/users/new">+ Neuen Benutzer erstellen</a>
   </div>

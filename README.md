@@ -13,6 +13,7 @@ Einfache Web-App, um Abonnements und die monatlichen Ausgaben dafür im Blick zu
 - Nächste Zahlungen (rollt automatisch weiter) und anstehende Kündigungsfristen
 - Admin-Bereich: Benutzer anlegen, sperren/entsperren, zum Admin machen, Passwörter setzen, löschen
 - Installierbar als App (PWA) auf Handy und PC, mit Offline-Hinweis
+- E-Mail-Erinnerungen 7 Tage und 1 Tag vor Kündigungsfristen (Sammel-Mail, pro Benutzer abschaltbar)
 
 ## PWA
 
@@ -28,6 +29,7 @@ app.js                  Einstiegspunkt (auch für cPanel/Passenger)
 db/schema.sql           Tabellen (idempotent)
 scripts/migrate.js      npm run migrate – legt Tabellen an
 scripts/seed.js         npm run seed    – Admin-User, Kategorien, Testdaten
+scripts/send-reminders.js  npm run reminders – E-Mail-Erinnerungen (Cron-Job)
 src/                    Konfiguration, DB-Pool, Middleware, Routen
 views/                  EJS-Templates
 public/                 CSS, JS, Favicon
@@ -46,6 +48,12 @@ Zugangsdaten gehören **nie** ins Repository: Die `.env` ist per `.gitignore` au
 | `BASE_PATH` | Optional, wenn die App in einem Unterordner läuft, z. B. `/abotracker` |
 | `ALLOW_REGISTRATION` | `false` schaltet die öffentliche Registrierung ab |
 | `SEED_DEMO_USER` | `false` = kein Demo-Benutzer beim Seed |
+| `APP_URL` | Öffentliche Adresse der App für Links in E-Mails |
+| `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Mailversand für Erinnerungen (Port 465 = SSL) |
+| `REMINDER_HOUR` | Ab dieser Stunde (Schweizer Zeit) werden Erinnerungen verschickt, Standard 8 |
+
+Die App lädt zusätzlich eine `.env` im Projektordner. Werte aus cPanel haben Vorrang.
+Datenbank-Änderungen spielt die App beim Start selbst ein (`npm run migrate` geht weiterhin).
 
 ## Deployment auf Namecheap (cPanel)
 
@@ -116,7 +124,29 @@ und legt keine doppelten Testdaten an.
 
 1. Lokal committen und nach GitHub pushen.
 2. cPanel → **Git™ Version Control** → *Manage* → *Pull or Deploy* → **Update from Remote**.
-3. cPanel → **Setup Node.js App** → bei neuen Abhängigkeiten *Run NPM Install*, dann **Restart**.
+3. cPanel → **Setup Node.js App** → bei neuen Abhängigkeiten *Run NPM Install*.
+4. App neu starten. Der Server läuft mit LiteSpeed; dort beendet der Restart-Button den alten Prozess
+   nicht zuverlässig. Sicher ist cPanel → **Terminal**:
+   ```bash
+   pkill -u bahnkyge -f lsnode
+   ```
+   Kontrolle: Neue Seiten-Inhalte sind sichtbar (statische Dateien allein beweisen den Neustart nicht).
+
+### 5. E-Mail-Erinnerungen einrichten
+
+1. cPanel → **Email Accounts** → *Create*: z. B. `noreply@bahnima1.com` mit starkem Passwort.
+   Unter *Connect Devices* stehen Server und Port für SMTP (meist `mail.<domain>`, Port 465).
+2. Im App-Ordner (`~/repositories/abotracker`) eine Datei `.env` anlegen. Der Cron-Job sieht die
+   Umgebungsvariablen aus „Setup Node.js App“ **nicht**, deshalb gehören hier alle Werte rein:
+   `DB_*`, `SESSION_SECRET`, `APP_URL`, `SMTP_*`, `MAIL_FROM` (Vorlage: `.env.example`).
+3. App neu starten (siehe oben) und in der Benutzerverwaltung **Test-E-Mail senden** klicken.
+4. cPanel → **Cron Jobs** → *Add New Cron Job*, Einstellung *Once Per Hour* (`0 * * * *`), Befehl:
+   ```bash
+   . /home/bahnkyge/nodevenv/repositories/abotracker/20/bin/activate && cd /home/bahnkyge/repositories/abotracker && npm run --silent reminders >> /home/bahnkyge/abotracker-reminders.log 2>&1
+   ```
+   Das Skript läuft stündlich, verschickt aber erst ab `REMINDER_HOUR` Uhr Schweizer Zeit und jede
+   Erinnerung nur einmal. Ein ausgefallener Lauf wird beim nächsten nachgeholt.
+5. Testlauf ohne Versand im Terminal: `npm run reminders -- --dry-run` (nach dem `activate`-Befehl oben).
 
 ## Lokale Entwicklung
 

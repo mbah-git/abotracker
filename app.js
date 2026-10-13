@@ -6,6 +6,7 @@ const helmet = require('helmet');
 
 const config = require('./src/config');
 const pool = require('./src/db');
+const { migrate } = require('./src/migrations');
 const format = require('./src/format');
 const { loadUser } = require('./src/middleware/auth');
 const csrf = require('./src/middleware/csrf');
@@ -118,6 +119,12 @@ app.use((err, req, res, next) => {
   });
 });
 
-app.listen(config.port, () => {
-  console.log(`AboTracker läuft auf Port ${config.port}${base ? ` unter ${base}` : ''}`);
-});
+// Datenbank auf den aktuellen Stand bringen, danach Anfragen annehmen
+migrate(pool)
+  .then((changes) => changes.forEach((c) => console.log(`Migration: ${c}`)))
+  .catch((err) => console.error('Migration beim Start fehlgeschlagen:', err.message))
+  .finally(() => {
+    app.listen(config.port, () => {
+      console.log(`AboTracker läuft auf Port ${config.port}${base ? ` unter ${base}` : ''}`);
+    });
+  });

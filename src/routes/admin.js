@@ -1,6 +1,8 @@
 const express = require('express');
 const pool = require('../db');
-const { monthlyCost } = require('../billing');
+const { monthlyCost, enrich, formatISO } = require('../billing');
+const { sendMail } = require('../mailer');
+const { buildEmail } = require('../reminders');
 const { requireAdmin } = require('../middleware/auth');
 const { validatePassword, validateNewUser, createUser, setPassword } = require('../users');
 const { DEMO_SUBS, addSubscriptions } = require('../demoData');
@@ -85,6 +87,29 @@ router.post('/password', async (req, res) => {
 // Alte Adresse aus der vorherigen Version weiterleiten
 router.get('/users/:id/password', (req, res) => {
   res.redirect(`${res.locals.base}/admin/password?user=${Number(req.params.id) || ''}`);
+});
+
+// ---- Test-E-Mail: Beispiel-Erinnerung an den angemeldeten Admin ----
+router.post('/test-mail', async (req, res) => {
+  const [rows] = await pool.query(
+    'SELECT * FROM subscriptions WHERE user_id = ? AND is_active = 1 AND notice_period_days IS NOT NULL',
+    [req.user.id]
+  );
+  let items = rows.map((s) => ({ sub: enrich(s), stage: 7 })).sort((a, b) => a.sub.cancelBy - b.sub.cancelBy).slice(0, 3);
+  if (!items.length) {
+    // Ohne eigene Fristen ein erfundenes Beispiel verwenden
+    const nextPayment = new Date();
+    nextPayment.setDate(nextPayment.getDate() + 37); // Frist damit in 7 Tagen
+    items = [{ sub: enrich({ id: 0, name: 'Beispiel-Abo', amount: '9.90', billing_cycle: 'monthly', next_payment_date: formatISO(nextPayment), notice_period_days: 30 }), stage: 7 }];
+  }
+
+  try {
+    await sendMail({ to: req.user.email, ...buildEmail(req.user, items, { test: true }) });
+    req.flash('success', `Test-E-Mail an ${req.user.email} verschickt. Schau in dein Postfach (auch im Spam-Ordner).`);
+  } catch (err) {
+    req.flash('error', `Test-E-Mail fehlgeschlagen: ${err.message}`);
+  }
+  res.redirect(`${res.locals.base}/admin/users`);
 });
 
 // ---- Aktionen pro Benutzer ----

@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS users (
   password_hash VARCHAR(255) NOT NULL,
   role          ENUM('user','admin') NOT NULL DEFAULT 'user',
   is_active     TINYINT(1) NOT NULL DEFAULT 1,
+  reminders_enabled TINYINT(1) NOT NULL DEFAULT 1,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login_at DATETIME NULL,
   PRIMARY KEY (id),
@@ -39,4 +40,14 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   KEY idx_subscriptions_user (user_id),
   CONSTRAINT fk_subscriptions_user FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE,
   CONSTRAINT fk_subscriptions_category FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Versendete Erinnerungen, damit keine Frist doppelt gemeldet wird
+CREATE TABLE IF NOT EXISTS reminder_log (
+  subscription_id INT UNSIGNED NOT NULL,
+  cancel_by       DATE NOT NULL,
+  stage           TINYINT UNSIGNED NOT NULL,
+  sent_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (subscription_id, cancel_by, stage),
+  CONSTRAINT fk_reminder_log_subscription FOREIGN KEY (subscription_id) REFERENCES subscriptions (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

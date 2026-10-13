@@ -32,7 +32,7 @@
         </nav>
         <div class="user-menu">
           <button type="button" id="installBtn" class="btn btn-sm" hidden>App installieren</button>
-          <a class="user-name <%= path.startsWith('/account') ? 'active' : '' %>" href="<%= base %>/account/password" title="<%= currentUser.email %> · Passwort ändern"><%= currentUser.name %></a>
+          <a class="user-name <%= path.startsWith('/account') ? 'active' : '' %>" href="<%= base %>/account" title="<%= currentUser.email %> · Einstellungen"><%= currentUser.name %></a>
           <form method="post" action="<%= base %>/logout">
             <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button type="submit" class="btn btn-ghost btn-sm">Abmelden</button>

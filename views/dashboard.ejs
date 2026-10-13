@@ -90,6 +90,7 @@
 
   <section class="card">
     <h2>Kündigungsfristen <span class="muted small">30 Tage</span></h2>
+    <p class="muted small card-hint">E-Mail-Erinnerungen: <%= currentUser.reminders_enabled ? 'an' : 'aus' %> · <a href="<%= base %>/account">ändern</a></p>
     <% if (!deadlines.length) { %>
       <p class="muted">Keine Kündigungsfristen in den nächsten 30 Tagen.</p>
     <% } else { %>

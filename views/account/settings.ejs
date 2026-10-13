@@ -1,0 +1,24 @@
+<%- include('../partials/header') %>
+<section class="card narrow">
+  <h1>Einstellungen</h1>
+  <p class="muted">Angemeldet als <%= currentUser.email %></p>
+
+  <form method="post" action="<%= base %>/account" class="form">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <h2 class="section-title">E-Mail-Erinnerungen</h2>
+    <label class="checkbox">
+      <input type="checkbox" name="reminders_enabled" value="1" <%= currentUser.reminders_enabled ? 'checked' : '' %>>
+      Vor Kündigungsfristen per E-Mail erinnern
+    </label>
+    <p class="muted small">Du bekommst 7 Tage und 1 Tag vor jeder Kündigungsfrist eine E-Mail an <%= currentUser.email %>.
+      Das gilt für aktive Abos, bei denen eine Kündigungsfrist eingetragen ist.</p>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Speichern</button>
+    </div>
+  </form>
+
+  <hr class="divider">
+  <h2 class="section-title">Passwort</h2>
+  <a class="btn" href="<%= base %>/account/password">Passwort ändern</a>
+</section>
+<%- include('../partials/footer') %>

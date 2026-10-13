@@ -6,6 +6,19 @@ const { requireLogin } = require('../middleware/auth');
 const router = express.Router();
 router.use(requireLogin);
 
+// ---- Einstellungen ----
+router.get('/', (req, res) => {
+  res.render('account/settings', { title: 'Einstellungen' });
+});
+
+router.post('/', async (req, res) => {
+  const enabled = req.body.reminders_enabled === '1' ? 1 : 0;
+  await pool.query('UPDATE users SET reminders_enabled = ? WHERE id = ?', [enabled, req.user.id]);
+  req.flash('success', enabled ? 'E-Mail-Erinnerungen sind eingeschaltet.' : 'E-Mail-Erinnerungen sind ausgeschaltet.');
+  res.redirect(`${res.locals.base}/account`);
+});
+
+// ---- Passwort ----
 router.get('/password', (req, res) => {
   res.render('account/password', { title: 'Passwort ändern', error: null });
 });

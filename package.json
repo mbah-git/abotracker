@@ -9,10 +9,11 @@
     "dev": "node --watch app.js",
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
-    "setup": "node scripts/migrate.js && node scripts/seed.js"
+    "setup": "node scripts/migrate.js && node scripts/seed.js",
+    "reminders": "node scripts/send-reminders.js"
   },
   "engines": {
-    "node": ">=18"
+    "node": ">=20"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
@@ -24,7 +25,8 @@
     "express-rate-limit": "^8.7.0",
     "express-session": "^1.19.0",
     "helmet": "^8.3.0",
-    "mysql2": "^3.24.4"
+    "mysql2": "^3.24.4",
+    "nodemailer": "^10.1.0"
   },
   "overrides": {
     "express-mysql-session": {
