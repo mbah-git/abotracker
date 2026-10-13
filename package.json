@@ -10,7 +10,8 @@
     "migrate": "node scripts/migrate.js",
     "seed": "node scripts/seed.js",
     "setup": "node scripts/migrate.js && node scripts/seed.js",
-    "reminders": "node scripts/send-reminders.js"
+    "reminders": "node scripts/send-reminders.js",
+    "backup": "node scripts/backup-db.js"
   },
   "engines": {
     "node": ">=20"

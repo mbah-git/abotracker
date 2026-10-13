@@ -8,6 +8,11 @@ Einfache Web-App, um Abonnements und die monatlichen Ausgaben dafür im Blick zu
 
 - Registrierung & Login (bcrypt-Passwörter, Sessions in der Datenbank, CSRF-Schutz, Rate-Limit)
 - Abos anlegen, bearbeiten, löschen, pausieren, als CSV exportieren (für Excel Schweiz)
+- Suche, Filter (Kategorie, Status) und Sortierung in „Meine Abos“
+- Geteilte Abos: Summen rechnen nur mit dem eigenen Anteil
+- Dashboard mit Abbuchungen der nächsten 12 Monate
+- „Passwort vergessen?“ mit Einmal-Link per E-Mail
+- Wöchentliches Datenbank-Backup per Cron-Job
 - Abrechnungszyklen wöchentlich / monatlich / quartalsweise / jährlich, alles auf Monatskosten umgerechnet
 - Dashboard: Kosten pro Monat/Jahr, Donut-Diagramm nach Kategorie, teuerste Abos
 - Nächste Zahlungen (rollt automatisch weiter) und anstehende Kündigungsfristen
@@ -30,6 +35,7 @@ db/schema.sql           Tabellen (idempotent)
 scripts/migrate.js      npm run migrate – legt Tabellen an
 scripts/seed.js         npm run seed    – Admin-User, Kategorien, Testdaten
 scripts/send-reminders.js  npm run reminders – E-Mail-Erinnerungen (Cron-Job)
+scripts/backup-db.js       npm run backup    – Datenbank-Backup (Cron-Job)
 src/                    Konfiguration, DB-Pool, Middleware, Routen
 views/                  EJS-Templates
 public/                 CSS, JS, Favicon
@@ -51,6 +57,7 @@ Zugangsdaten gehören **nie** ins Repository: Die `.env` ist per `.gitignore` au
 | `APP_URL` | Öffentliche Adresse der App für Links in E-Mails |
 | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, `MAIL_FROM` | Mailversand für Erinnerungen (Port 465 = SSL) |
 | `REMINDER_HOUR` | Ab dieser Stunde (Schweizer Zeit) werden Erinnerungen verschickt, Standard 8 |
+| `BACKUP_DIR`, `BACKUP_KEEP` | Zielordner (Standard `~/backups/abotracker`) und Anzahl aufbewahrter Backups (Standard 8) |
 
 Die App lädt zusätzlich eine `.env` im Projektordner. Werte aus cPanel haben Vorrang.
 Datenbank-Änderungen spielt die App beim Start selbst ein (`npm run migrate` geht weiterhin).
@@ -149,6 +156,17 @@ und legt keine doppelten Testdaten an.
    Erinnerung nur einmal. Ein ausgefallener Lauf wird beim nächsten nachgeholt.
    Die Log-Datei entsteht beim ersten Lauf (leer, solange nichts zu melden ist); Fehler landen ebenfalls dort.
 5. Testlauf ohne Versand im Terminal: `npm run reminders -- --dry-run` (nach dem `activate`-Befehl oben).
+
+### 6. Wöchentliches Datenbank-Backup
+
+1. cPanel → **Cron Jobs** → *Add New Cron Job*, Einstellung *Once Per Week* (`0 3 * * 0`, sonntags 3 Uhr Serverzeit), Befehl:
+   ```bash
+   { . /home/<cpanel-user>/nodevenv/repositories/abotracker/20/bin/activate && cd /home/<cpanel-user>/repositories/abotracker && npm run --silent backup; } >> /home/<cpanel-user>/abotracker-backup.log 2>&1
+   ```
+2. Die Backups liegen in `~/backups/abotracker/` (nicht öffentlich erreichbar), die letzten 8 werden behalten.
+   Sessions sind nicht enthalten.
+3. **Wiederherstellen:** cPanel → **phpMyAdmin** → links die Datenbank wählen → *Importieren* → die
+   `.sql.gz`-Datei auswählen → *OK*. Die Tabellen werden dabei durch den Stand des Backups ersetzt.
 
 ## Lokale Entwicklung
 
