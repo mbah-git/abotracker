@@ -132,6 +132,10 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 .badge-ok { background: var(--ok-soft); color: var(--ok); }
 .badge-warn { background: var(--warn-soft); color: var(--warn); }
 .chip { display: inline-flex; align-items: center; gap: 6px; }
+.inline-form { display: inline; margin: 0; }
+.badge-toggle { border: 1px solid transparent; cursor: pointer; font: inherit; font-size: .75rem; font-weight: 600; }
+.badge-toggle:hover { border-color: currentColor; }
+.badge-toggle span { opacity: .6; }
 
 /* Tabellen */
 .table-card { padding: 0; overflow: hidden; }
@@ -209,5 +213,5 @@ input:focus, select:focus, textarea:focus { outline: 2px solid var(--accent); ou
   .table td[data-label="Name"] { display: block; text-align: left; margin-bottom: 4px; }
   .table td[data-label="Name"]::before { content: none; }
   .table td.actions-cell { display: block; padding-top: 10px; }
-  .table td.actions-cell .actions { justify-content: flex-start; }
+  .table td.actions-cell .actions { justify-content: flex-start; min-width: 0; }
 }

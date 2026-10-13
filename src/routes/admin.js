@@ -12,11 +12,11 @@ router.use(requireAdmin);
 
 router.get('/users', async (req, res) => {
   const [users] = await pool.query(`
-    SELECT u.id, u.email, u.name, u.role, u.is_active, u.created_at, u.last_login_at,
+    SELECT u.id, u.email, u.name, u.role, u.is_active, u.reminders_enabled, u.created_at, u.last_login_at,
            COUNT(s.id) AS sub_count
     FROM users u
     LEFT JOIN subscriptions s ON s.user_id = u.id
-    GROUP BY u.id, u.email, u.name, u.role, u.is_active, u.created_at, u.last_login_at
+    GROUP BY u.id, u.email, u.name, u.role, u.is_active, u.reminders_enabled, u.created_at, u.last_login_at
     ORDER BY u.created_at, u.id`);
 
   const [subs] = await pool.query('SELECT user_id, amount, billing_cycle FROM subscriptions WHERE is_active = 1');
@@ -130,6 +130,20 @@ router.post('/users/:id/toggle-active', async (req, res) => {
   if (user) {
     await pool.query('UPDATE users SET is_active = ? WHERE id = ?', [user.is_active ? 0 : 1, user.id]);
     req.flash('success', `${user.name} wurde ${user.is_active ? 'gesperrt' : 'entsperrt'}.`);
+  }
+  res.redirect(`${res.locals.base}/admin/users`);
+});
+
+// Erinnerungen duerfen auch fuer das eigene Konto umgeschaltet werden (kein Aussperr-Risiko)
+router.post('/users/:id/toggle-reminders', async (req, res) => {
+  const [rows] = await pool.query('SELECT id, name, reminders_enabled FROM users WHERE id = ?', [Number(req.params.id)]);
+  const user = rows[0];
+  if (!user) {
+    req.flash('error', 'Benutzer nicht gefunden.');
+  } else {
+    const enabled = user.reminders_enabled ? 0 : 1;
+    await pool.query('UPDATE users SET reminders_enabled = ? WHERE id = ?', [enabled, user.id]);
+    req.flash('success', `E-Mail-Erinnerungen für ${user.name} sind jetzt ${enabled ? 'eingeschaltet' : 'ausgeschaltet'}.`);
   }
   res.redirect(`${res.locals.base}/admin/users`);
 });

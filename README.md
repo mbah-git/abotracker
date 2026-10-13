@@ -11,7 +11,7 @@ Einfache Web-App, um Abonnements und die monatlichen Ausgaben dafür im Blick zu
 - Abrechnungszyklen wöchentlich / monatlich / quartalsweise / jährlich, alles auf Monatskosten umgerechnet
 - Dashboard: Kosten pro Monat/Jahr, Donut-Diagramm nach Kategorie, teuerste Abos
 - Nächste Zahlungen (rollt automatisch weiter) und anstehende Kündigungsfristen
-- Admin-Bereich: Benutzer anlegen, sperren/entsperren, zum Admin machen, Passwörter setzen, löschen
+- Admin-Bereich: Benutzer anlegen, sperren/entsperren, zum Admin machen, Passwörter setzen, Erinnerungen an/aus, löschen
 - Installierbar als App (PWA) auf Handy und PC, mit Offline-Hinweis
 - E-Mail-Erinnerungen 7 Tage und 1 Tag vor Kündigungsfristen (Sammel-Mail, pro Benutzer abschaltbar)
 
