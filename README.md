@@ -143,10 +143,11 @@ und legt keine doppelten Testdaten an.
 3. App neu starten (siehe oben) und in der Benutzerverwaltung **Test-E-Mail senden** klicken.
 4. cPanel → **Cron Jobs** → *Add New Cron Job*, Einstellung *Once Per Hour* (`0 * * * *`), Befehl:
    ```bash
-   . /home/<cpanel-user>/nodevenv/repositories/abotracker/20/bin/activate && cd /home/<cpanel-user>/repositories/abotracker && npm run --silent reminders >> /home/<cpanel-user>/abotracker-reminders.log 2>&1
+   { . /home/<cpanel-user>/nodevenv/repositories/abotracker/20/bin/activate && cd /home/<cpanel-user>/repositories/abotracker && npm run --silent reminders; } >> /home/<cpanel-user>/abotracker-reminders.log 2>&1
    ```
    Das Skript läuft stündlich, verschickt aber erst ab `REMINDER_HOUR` Uhr Schweizer Zeit und jede
    Erinnerung nur einmal. Ein ausgefallener Lauf wird beim nächsten nachgeholt.
+   Die Log-Datei entsteht beim ersten Lauf (leer, solange nichts zu melden ist); Fehler landen ebenfalls dort.
 5. Testlauf ohne Versand im Terminal: `npm run reminders -- --dry-run` (nach dem `activate`-Befehl oben).
 
 ## Lokale Entwicklung
