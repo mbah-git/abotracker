@@ -115,6 +115,9 @@ app.use((req, res) => {
 // eslint-disable-next-line no-unused-vars
 app.use((err, req, res, next) => {
   console.error(err);
+  // Fehler nach dem Senden (z. B. Session konnte nicht gespeichert werden): keine zweite Antwort,
+  // sonst stuerzt der Prozess mit ERR_HTTP_HEADERS_SENT ab
+  if (res.headersSent) return next(err);
   res.status(500).render('error', {
     title: 'Fehler',
     message: 'Da ist etwas schiefgelaufen. Bitte versuche es später erneut.',
