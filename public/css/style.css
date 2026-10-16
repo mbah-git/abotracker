@@ -144,6 +144,15 @@ h2 { font-size: 1.05rem; margin: 0 0 1rem; }
 .badge-toggle { border: 1px solid transparent; cursor: pointer; font: inherit; font-size: .75rem; font-weight: 600; }
 .badge-toggle:hover { border-color: currentColor; }
 .badge-toggle span { opacity: .6; }
+.calendar-url { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; font-weight: 500; font-size: .92rem; }
+.calendar-url .hint { color: var(--muted); font-weight: 400; font-size: .8rem; }
+.calendar-url input { font-family: ui-monospace, Consolas, monospace; font-size: .8rem; }
+.calendar-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.calendar-actions form { margin: 0; }
+.calendar-help { margin-top: 14px; font-size: .9rem; }
+.calendar-help summary { cursor: pointer; color: var(--accent); font-weight: 500; }
+.calendar-help ul { padding-left: 18px; margin: 8px 0 0; }
+.calendar-help li { margin-bottom: 6px; }
 .link-button { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: .82rem; cursor: pointer; align-self: flex-start; }
 .link-button:hover { text-decoration: underline; }
 .toggle-stack { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }

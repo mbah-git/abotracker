@@ -8,6 +8,8 @@ const { legacyCancelBy, formatISO } = require('./billing');
 const ADDED_COLUMNS = [
   ['users', 'reminders_enabled', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER is_active'],
   ['users', 'payment_reminders_enabled', 'TINYINT(1) NOT NULL DEFAULT 1 AFTER reminders_enabled'],
+  // Geheimer Link fuer das Kalender-Abo (iCal)
+  ['users', 'calendar_token', 'CHAR(43) NULL UNIQUE AFTER payment_reminders_enabled'],
   ['subscriptions', 'shared_with', 'TINYINT UNSIGNED NOT NULL DEFAULT 1 AFTER amount'],
   ['subscriptions', 'cancel_by_date', 'DATE NULL AFTER next_payment_date'],
 ];

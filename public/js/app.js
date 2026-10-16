@@ -79,6 +79,27 @@
     update();
   }
 
+  // Kalender-Link: kopieren bzw. beim Anklicken ganz markieren
+  document.querySelectorAll('[data-select-on-focus]').forEach(function (el) {
+    el.addEventListener('focus', function () { el.select(); });
+  });
+  document.querySelectorAll('[data-copy]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var input = document.getElementById(btn.getAttribute('data-copy'));
+      var label = btn.textContent;
+      var done = function () {
+        btn.textContent = btn.getAttribute('data-copied') || 'Kopiert';
+        setTimeout(function () { btn.textContent = label; }, 2000);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(input.value).then(done, function () { input.select(); });
+      } else {
+        input.select();
+        if (document.execCommand('copy')) done();
+      }
+    });
+  });
+
   // Filter in "Meine Abos": Auswahllisten sofort anwenden
   document.querySelectorAll('select[data-autosubmit]').forEach(function (el) {
     el.addEventListener('change', function () { el.form.submit(); });

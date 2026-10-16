@@ -12,6 +12,7 @@ const { migrate } = require('./src/migrations');
 const format = require('./src/format');
 const { isConfigured: isMailConfigured } = require('./src/mailer');
 const { loadUser } = require('./src/middleware/auth');
+const { calendarFeed } = require('./src/routes/calendar');
 const csrf = require('./src/middleware/csrf');
 const flash = require('./src/middleware/flash');
 
@@ -89,6 +90,9 @@ app.use((req, res, next) => {
   });
   next();
 });
+
+// Kalender-Abo: vor der Session, damit die regelmaessigen Abrufe der Kalender keine Sessions anlegen
+app.get(`${base}/calendar/:token.ics`, calendarFeed);
 
 app.use(session({
   name: 'abotracker.sid',

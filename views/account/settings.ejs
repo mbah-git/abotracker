@@ -23,6 +23,47 @@
   </form>
 
   <hr class="divider">
+  <h2 class="section-title" id="kalender">Kalender-Abo</h2>
+  <p class="muted small">Zahlungen der nächsten 12 Monate und deine Kündigungsfristen als Termine in Google Kalender,
+    Apple Kalender oder Outlook. Dein Kalender holt Änderungen automatisch ab (je nach App alle paar Stunden).</p>
+  <% if (!calendar) { %>
+    <form method="post" action="<%= base %>/account/calendar">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      <input type="hidden" name="action" value="create">
+      <button type="submit" class="btn btn-primary">Kalender-Link erzeugen</button>
+    </form>
+  <% } else { %>
+    <label class="calendar-url">Dein persönlicher Link <span class="hint">geheim halten – wer ihn hat, sieht deine Abo-Termine</span>
+      <input type="text" value="<%= calendar.url %>" readonly id="calendarUrl" data-select-on-focus>
+    </label>
+    <div class="calendar-actions">
+      <button type="button" class="btn btn-primary" data-copy="calendarUrl" data-copied="Kopiert ✓">Link kopieren</button>
+      <a class="btn" href="<%= calendar.webcal %>">In Kalender-App öffnen</a>
+    </div>
+    <details class="calendar-help">
+      <summary>So trägst du den Link ein</summary>
+      <ul>
+        <li><strong>Google Kalender</strong> (am Computer): links bei „Weitere Kalender“ auf <strong>+</strong> → <em>Per URL</em> → Link einfügen → <em>Kalender hinzufügen</em>. Erscheint danach auch auf dem Handy.</li>
+        <li><strong>iPhone / iPad</strong>: „In Kalender-App öffnen“ antippen und <em>Abonnieren</em> wählen. Oder: Einstellungen → Kalender → Accounts → Account hinzufügen → Andere → <em>Kalenderabo hinzufügen</em>.</li>
+        <li><strong>Mac</strong>: „In Kalender-App öffnen“ klicken, oder in Kalender: Ablage → <em>Neues Kalenderabonnement</em>.</li>
+        <li><strong>Outlook</strong>: Kalender → <em>Kalender hinzufügen</em> → <em>Aus dem Internet abonnieren</em> → Link einfügen.</li>
+      </ul>
+    </details>
+    <div class="calendar-actions">
+      <form method="post" action="<%= base %>/account/calendar" data-confirm="Neuen Link erzeugen? Der bisherige funktioniert dann nicht mehr und muss im Kalender ersetzt werden.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="action" value="rotate">
+        <button type="submit" class="btn btn-sm">Neuen Link erzeugen</button>
+      </form>
+      <form method="post" action="<%= base %>/account/calendar" data-confirm="Kalender-Abo ausschalten? Der Link funktioniert dann nicht mehr.">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+        <input type="hidden" name="action" value="disable">
+        <button type="submit" class="btn btn-sm btn-danger">Ausschalten</button>
+      </form>
+    </div>
+  <% } %>
+
+  <hr class="divider">
   <h2 class="section-title">Passwort</h2>
   <a class="btn" href="<%= base %>/account/password">Passwort ändern</a>
 </section>

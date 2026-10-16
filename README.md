@@ -13,6 +13,7 @@ Einfache Web-App, um Abonnements und die monatlichen Ausgaben dafür im Blick zu
 - Dashboard mit Abbuchungen der nächsten 12 Monate
 - „Passwort vergessen?“ mit Einmal-Link per E-Mail
 - Wöchentliches Datenbank-Backup per Cron-Job
+- Kalender-Abo (iCal): Zahlungen der nächsten 12 Monate und Kündigungsfristen in Google, Apple oder Outlook; persönlicher geheimer Link in den Einstellungen
 - Abrechnungszyklen wöchentlich / monatlich / quartalsweise / jährlich (auf Monatskosten umgerechnet) und einmalig (Zahlungsdatum optional)
 - Kündigungsfrist als festes Datum („Kündigen bis“)
 - Dashboard: Kosten pro Monat/Jahr, Donut-Diagramm nach Kategorie, teuerste Abos

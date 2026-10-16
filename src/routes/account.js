@@ -2,13 +2,36 @@ const express = require('express');
 const bcrypt = require('bcryptjs');
 const pool = require('../db');
 const { requireLogin } = require('../middleware/auth');
+const config = require('../config');
+const { newToken } = require('./calendar');
 
 const router = express.Router();
 router.use(requireLogin);
 
 // ---- Einstellungen ----
 router.get('/', (req, res) => {
-  res.render('account/settings', { title: 'Einstellungen' });
+  let calendar = null;
+  if (req.user.calendar_token) {
+    const origin = config.appUrl || `${req.protocol}://${req.get('host')}${res.locals.base}`;
+    const url = `${origin}/calendar/${req.user.calendar_token}.ics`;
+    calendar = { url, webcal: url.replace(/^https?:/, 'webcal:') };
+  }
+  res.render('account/settings', { title: 'Einstellungen', calendar });
+});
+
+// Kalender-Abo: Link erzeugen, ersetzen (alter wird ungueltig) oder ausschalten
+router.post('/calendar', async (req, res) => {
+  const action = req.body.action;
+  if (action === 'disable') {
+    await pool.query('UPDATE users SET calendar_token = NULL WHERE id = ?', [req.user.id]);
+    req.flash('success', 'Das Kalender-Abo ist ausgeschaltet. Der bisherige Link funktioniert nicht mehr.');
+  } else {
+    await pool.query('UPDATE users SET calendar_token = ? WHERE id = ?', [newToken(), req.user.id]);
+    req.flash('success', action === 'rotate'
+      ? 'Neuer Kalender-Link erzeugt. Der alte funktioniert nicht mehr – trage den neuen in deinem Kalender ein.'
+      : 'Dein Kalender-Link ist bereit.');
+  }
+  res.redirect(`${res.locals.base}/account#kalender`);
 });
 
 router.post('/', async (req, res) => {

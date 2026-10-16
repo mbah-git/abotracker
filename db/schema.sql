@@ -10,10 +10,12 @@ CREATE TABLE IF NOT EXISTS users (
   is_active     TINYINT(1) NOT NULL DEFAULT 1,
   reminders_enabled TINYINT(1) NOT NULL DEFAULT 1,
   payment_reminders_enabled TINYINT(1) NOT NULL DEFAULT 1,
+  calendar_token CHAR(43) NULL,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login_at DATETIME NULL,
   PRIMARY KEY (id),
-  UNIQUE KEY uq_users_email (email)
+  UNIQUE KEY uq_users_email (email),
+  UNIQUE KEY uq_users_calendar_token (calendar_token)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS categories (
