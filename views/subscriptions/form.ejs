@@ -31,8 +31,9 @@
           <% }) %>
         </select>
       </label>
-      <label>Nächste Zahlung <span class="hint" data-once-hint <%= values.billing_cycle === 'once' ? '' : 'hidden' %>>bei „Einmalig“ optional</span>
-        <input type="date" name="next_payment_date" value="<%= values.next_payment_date || '' %>" <%= values.billing_cycle === 'once' ? '' : 'required' %>>
+      <label>Nächste Zahlung <span class="hint">bei „Einmalig“ optional: leer lassen = keine Zahlung, keine Erinnerung</span>
+        <input type="date" name="next_payment_date" value="<%= values.next_payment_date || '' %>" data-default="<%= sub ? '' : values.next_payment_date %>">
+        <button type="button" class="link-button" data-clear-date <%= values.billing_cycle === 'once' && values.next_payment_date ? '' : 'hidden' %>>Kein Datum</button>
       </label>
     </div>
 

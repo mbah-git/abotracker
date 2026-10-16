@@ -1,4 +1,6 @@
 const path = require('path');
+const crypto = require('crypto');
+const fs = require('fs');
 const express = require('express');
 const session = require('express-session');
 const MySQLStore = require('express-mysql-session')(session);
@@ -15,6 +17,13 @@ const flash = require('./src/middleware/flash');
 
 const app = express();
 const base = config.basePath;
+
+// Versionskennung fuer CSS/JS (?v=...): aendert sich nur, wenn sich der Inhalt aendert.
+// So laedt der Browser nach einem Update sofort die neuen Dateien, darf sie sonst aber lange zwischenspeichern.
+const assetVersion = crypto.createHash('sha1')
+  .update(fs.readFileSync(path.join(__dirname, 'public/css/style.css')))
+  .update(fs.readFileSync(path.join(__dirname, 'public/js/app.js')))
+  .digest('hex').slice(0, 10);
 
 app.set('view engine', 'ejs');
 app.set('views', path.join(__dirname, 'views'));
@@ -72,6 +81,7 @@ app.use((req, res, next) => {
     path: base && req.path.startsWith(base) ? req.path.slice(base.length) || '/' : req.path,
     fmt: format,
     allowRegistration: config.allowRegistration,
+    assetVersion,
     mailEnabled: isMailConfigured(),
     currentUser: null,
     flash: null,

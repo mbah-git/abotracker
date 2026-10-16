@@ -50,16 +50,33 @@
     el.addEventListener('click', function () { window.location.reload(); });
   });
 
-  // Abo-Formular: bei "Einmalig" darf das Zahlungsdatum leer bleiben
+  // Abo-Formular: bei "Einmalig" darf das Zahlungsdatum leer bleiben.
+  // Pflicht ist es nur zur Bequemlichkeit im Browser; massgeblich prueft der Server.
   var cycleSelect = document.querySelector('select[name="billing_cycle"]');
   var paymentInput = document.querySelector('input[name="next_payment_date"]');
-  var onceHint = document.querySelector('[data-once-hint]');
+  var clearDate = document.querySelector('[data-clear-date]');
   if (cycleSelect && paymentInput) {
-    cycleSelect.addEventListener('change', function () {
+    var update = function () {
       var once = cycleSelect.value === 'once';
       paymentInput.required = !once;
-      if (onceHint) onceHint.hidden = !once;
+      if (clearDate) clearDate.hidden = !(once && paymentInput.value);
+    };
+    cycleSelect.addEventListener('change', function () {
+      // Das vorausgefuellte Datum (heute) bei "Einmalig" entfernen, solange es niemand geaendert hat
+      if (cycleSelect.value === 'once' && paymentInput.value && paymentInput.value === paymentInput.getAttribute('data-default')) {
+        paymentInput.value = '';
+      }
+      update();
     });
+    paymentInput.addEventListener('input', update);
+    if (clearDate) {
+      clearDate.addEventListener('click', function () {
+        paymentInput.value = '';
+        update();
+        paymentInput.focus();
+      });
+    }
+    update();
   }
 
   // Filter in "Meine Abos": Auswahllisten sofort anwenden

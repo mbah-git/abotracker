@@ -1,7 +1,7 @@
 // Service Worker fuer die PWA.
 // Seiten (HTML) kommen immer frisch vom Server, da sie Benutzerdaten und CSRF-Tokens enthalten.
 // Statische Dateien werden zwischengespeichert; ohne Netz erscheint eine Offline-Seite.
-const VERSION = 'v1';
+const VERSION = 'v2';
 const CACHE = `abotracker-static-${VERSION}`;
 const BASE = new URL(self.registration.scope).pathname.replace(/\/$/, '');
 const OFFLINE_URL = `${BASE}/static/offline.html`;
@@ -46,14 +46,16 @@ self.addEventListener('fetch', (event) => {
   }
 
   if (url.pathname.startsWith(`${BASE}/static/`)) {
-    // Stale-while-revalidate: sofort aus dem Cache, im Hintergrund aktualisieren
-    event.respondWith(caches.open(CACHE).then(async (cache) => {
-      const cached = await cache.match(request);
-      const network = fetch(request).then((response) => {
-        if (response.ok) cache.put(request, response.clone());
-        return response;
-      }).catch(() => cached);
-      return cached || network;
-    }));
+    // Zuerst vom Server (Updates greifen sofort), der Cache dient nur offline.
+    // Gespeichert wird ohne ?v=..., damit alte Versionen sich ueberschreiben statt anzuhaeufen.
+    const key = url.origin + url.pathname;
+    event.respondWith(caches.open(CACHE).then((cache) =>
+      fetch(request)
+        .then((response) => {
+          if (response.ok) cache.put(key, response.clone());
+          return response;
+        })
+        .catch(() => cache.match(key).then((cached) => cached || Response.error()))
+    ));
   }
 });
