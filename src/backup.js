@@ -1,7 +1,7 @@
 // SQL-Export der App-Tabellen (ohne Sessions). Wiederherstellen z. B. per phpMyAdmin -> Importieren.
 
 // Reihenfolge so, dass Fremdschluessel beim Import erfuellt sind
-const TABLES = ['users', 'categories', 'subscriptions', 'reminder_log', 'password_resets'];
+const TABLES = ['users', 'categories', 'subscriptions', 'reminders_sent', 'password_resets'];
 const BATCH = 100;
 
 const ident = (name) => `\`${String(name).replace(/`/g, '``')}\``;

@@ -7,7 +7,7 @@ async function loadUser(req, res, next) {
   if (!req.session.userId) return next();
 
   const [rows] = await pool.query(
-    'SELECT id, email, name, role, is_active, reminders_enabled FROM users WHERE id = ?',
+    'SELECT id, email, name, role, is_active, reminders_enabled, payment_reminders_enabled FROM users WHERE id = ?',
     [req.session.userId]
   );
   const user = rows[0];

@@ -12,9 +12,10 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', async (req, res) => {
-  const enabled = req.body.reminders_enabled === '1' ? 1 : 0;
-  await pool.query('UPDATE users SET reminders_enabled = ? WHERE id = ?', [enabled, req.user.id]);
-  req.flash('success', enabled ? 'E-Mail-Erinnerungen sind eingeschaltet.' : 'E-Mail-Erinnerungen sind ausgeschaltet.');
+  const cancel = req.body.reminders_enabled === '1' ? 1 : 0;
+  const payment = req.body.payment_reminders_enabled === '1' ? 1 : 0;
+  await pool.query('UPDATE users SET reminders_enabled = ?, payment_reminders_enabled = ? WHERE id = ?', [cancel, payment, req.user.id]);
+  req.flash('success', 'Deine Einstellungen wurden gespeichert.');
   res.redirect(`${res.locals.base}/account`);
 });
 

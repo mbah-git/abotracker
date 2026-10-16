@@ -9,6 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
   role          ENUM('user','admin') NOT NULL DEFAULT 'user',
   is_active     TINYINT(1) NOT NULL DEFAULT 1,
   reminders_enabled TINYINT(1) NOT NULL DEFAULT 1,
+  payment_reminders_enabled TINYINT(1) NOT NULL DEFAULT 1,
   created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   last_login_at DATETIME NULL,
   PRIMARY KEY (id),
@@ -30,9 +31,9 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   name               VARCHAR(120) NOT NULL,
   amount             DECIMAL(10,2) NOT NULL,
   shared_with        TINYINT UNSIGNED NOT NULL DEFAULT 1,
-  billing_cycle      ENUM('weekly','monthly','quarterly','yearly') NOT NULL DEFAULT 'monthly',
-  next_payment_date  DATE NOT NULL,
-  notice_period_days SMALLINT UNSIGNED NULL,
+  billing_cycle      ENUM('weekly','monthly','quarterly','yearly','once') NOT NULL DEFAULT 'monthly',
+  next_payment_date  DATE NULL,
+  cancel_by_date     DATE NULL,
   is_active          TINYINT(1) NOT NULL DEFAULT 1,
   notes              VARCHAR(500) NULL,
   created_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -43,14 +44,15 @@ CREATE TABLE IF NOT EXISTS subscriptions (
   CONSTRAINT fk_subscriptions_category FOREIGN KEY (category_id) REFERENCES categories (id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Versendete Erinnerungen, damit keine Frist doppelt gemeldet wird
-CREATE TABLE IF NOT EXISTS reminder_log (
+-- Versendete Erinnerungen (Kuendigungsfrist bzw. Zahlung), damit nichts doppelt gemeldet wird
+CREATE TABLE IF NOT EXISTS reminders_sent (
   subscription_id INT UNSIGNED NOT NULL,
-  cancel_by       DATE NOT NULL,
+  kind            ENUM('cancel','payment') NOT NULL,
+  due_date        DATE NOT NULL,
   stage           TINYINT UNSIGNED NOT NULL,
   sent_at         DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (subscription_id, cancel_by, stage),
-  CONSTRAINT fk_reminder_log_subscription FOREIGN KEY (subscription_id) REFERENCES subscriptions (id) ON DELETE CASCADE
+  PRIMARY KEY (subscription_id, kind, due_date, stage),
+  CONSTRAINT fk_reminders_sent_subscription FOREIGN KEY (subscription_id) REFERENCES subscriptions (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Einmal-Links zum Zuruecksetzen des Passworts (nur der SHA-256-Hash des Tokens wird gespeichert)

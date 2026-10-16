@@ -31,8 +31,8 @@
           <% }) %>
         </select>
       </label>
-      <label>Nächste Zahlung
-        <input type="date" name="next_payment_date" value="<%= values.next_payment_date || '' %>" required>
+      <label>Nächste Zahlung <span class="hint" data-once-hint <%= values.billing_cycle === 'once' ? '' : 'hidden' %>>bei „Einmalig“ optional</span>
+        <input type="date" name="next_payment_date" value="<%= values.next_payment_date || '' %>" <%= values.billing_cycle === 'once' ? '' : 'required' %>>
       </label>
     </div>
 
@@ -40,8 +40,8 @@
       <input type="number" name="shared_with" value="<%= values.shared_with ?? 1 %>" min="1" max="20" step="1" required>
     </label>
 
-    <label>Kündigungsfrist in Tagen <span class="hint">optional, z. B. 30 für einen Monat</span>
-      <input type="number" name="notice_period_days" value="<%= values.notice_period_days ?? '' %>" min="0" max="365" step="1">
+    <label>Kündigen bis <span class="hint">optional · spätestes Datum, an dem du kündigen musst</span>
+      <input type="date" name="cancel_by_date" value="<%= values.cancel_by_date || '' %>">
     </label>
 
     <label>Notizen <span class="hint">optional</span>

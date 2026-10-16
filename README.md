@@ -13,12 +13,13 @@ Einfache Web-App, um Abonnements und die monatlichen Ausgaben dafür im Blick zu
 - Dashboard mit Abbuchungen der nächsten 12 Monate
 - „Passwort vergessen?“ mit Einmal-Link per E-Mail
 - Wöchentliches Datenbank-Backup per Cron-Job
-- Abrechnungszyklen wöchentlich / monatlich / quartalsweise / jährlich, alles auf Monatskosten umgerechnet
+- Abrechnungszyklen wöchentlich / monatlich / quartalsweise / jährlich (auf Monatskosten umgerechnet) und einmalig (Zahlungsdatum optional)
+- Kündigungsfrist als festes Datum („Kündigen bis“)
 - Dashboard: Kosten pro Monat/Jahr, Donut-Diagramm nach Kategorie, teuerste Abos
-- Nächste Zahlungen (rollt automatisch weiter) und anstehende Kündigungsfristen
+- Nächste Zahlungen (rollen automatisch weiter) und anstehende Kündigungsfristen
 - Admin-Bereich: Benutzer anlegen, sperren/entsperren, zum Admin machen, Passwörter setzen, Erinnerungen an/aus, löschen
 - Installierbar als App (PWA) auf Handy und PC, mit Offline-Hinweis
-- E-Mail-Erinnerungen 7 Tage und 1 Tag vor Kündigungsfristen (Sammel-Mail, pro Benutzer abschaltbar)
+- E-Mail-Erinnerungen 14 Tage, 7 Tage und 1 Tag vor Kündigungsfristen und vor Zahlungen (eine Sammel-Mail pro Tag, beides pro Benutzer abschaltbar; bei wöchentlichen Abos vor Zahlungen nur 1 Tag vorher)
 
 ## PWA
 
@@ -114,7 +115,7 @@ Im selben Dialog unter **Run JS script** das Skript `setup` ausführen
 
 - alle Tabellen,
 - 8 Kategorien,
-- den Admin-User aus `ADMIN_EMAIL` / `ADMIN_PASSWORD` mit 13 Testabos,
+- den Admin-User aus `ADMIN_EMAIL` / `ADMIN_PASSWORD` mit 14 Testabos,
 - einen Demo-Benutzer `demo@example.com` mit 3 Abos (Zufallspasswort, nur zur Anzeige in der Benutzerverwaltung).
 
 Alternativ per SSH-Terminal:

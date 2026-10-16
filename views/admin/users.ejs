@@ -38,14 +38,17 @@
           </td>
           <td data-label="Rolle"><span class="badge <%= u.role === 'admin' ? 'badge-accent' : '' %>"><%= u.role === 'admin' ? 'Admin' : 'Benutzer' %></span></td>
           <td data-label="Status"><span class="badge <%= u.is_active ? 'badge-ok' : 'badge-warn' %>"><%= u.is_active ? 'aktiv' : 'gesperrt' %></span></td>
-          <td data-label="Erinnerungen">
-            <form method="post" action="<%= base %>/admin/users/<%= u.id %>/toggle-reminders" class="inline-form">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button type="submit" class="badge badge-toggle <%= u.reminders_enabled ? 'badge-ok' : '' %>" title="Klicken, um E-Mail-Erinnerungen für <%= u.name %> <%= u.reminders_enabled ? 'aus' : 'ein' %>zuschalten">
-                <%= u.reminders_enabled ? 'an' : 'aus' %> <span aria-hidden="true">⇄</span>
-              </button>
-            </form>
-          </td>
+          <td data-label="Erinnerungen"><div class="toggle-stack">
+            <% [['cancel', 'Fristen', u.reminders_enabled], ['payment', 'Zahlungen', u.payment_reminders_enabled]].forEach(function (t) { %>
+              <form method="post" action="<%= base %>/admin/users/<%= u.id %>/toggle-reminders" class="inline-form">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <input type="hidden" name="kind" value="<%= t[0] %>">
+                <button type="submit" class="badge badge-toggle <%= t[2] ? 'badge-ok' : '' %>" title="Klicken, um die <%= t[1] %>-Erinnerungen für <%= u.name %> <%= t[2] ? 'aus' : 'ein' %>zuschalten">
+                  <%= t[1] %> <%= t[2] ? 'an' : 'aus' %> <span aria-hidden="true">⇄</span>
+                </button>
+              </form>
+            <% }) %>
+          </div></td>
           <td data-label="Abos" class="num"><%= u.sub_count %></td>
           <td data-label="pro Monat" class="num"><%= fmt.money(u.monthly) %></td>
           <td data-label="Registriert"><%= fmt.date(u.created_at) %></td>

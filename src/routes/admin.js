@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../db');
-const { monthlyCost, enrich, formatISO } = require('../billing');
+const { monthlyCost, enrich, formatISO, today } = require('../billing');
 const { sendMail } = require('../mailer');
 const { buildEmail } = require('../reminders');
 const { requireAdmin } = require('../middleware/auth');
@@ -12,11 +12,11 @@ router.use(requireAdmin);
 
 router.get('/users', async (req, res) => {
   const [users] = await pool.query(`
-    SELECT u.id, u.email, u.name, u.role, u.is_active, u.reminders_enabled, u.created_at, u.last_login_at,
+    SELECT u.id, u.email, u.name, u.role, u.is_active, u.reminders_enabled, u.payment_reminders_enabled, u.created_at, u.last_login_at,
            COUNT(s.id) AS sub_count
     FROM users u
     LEFT JOIN subscriptions s ON s.user_id = u.id
-    GROUP BY u.id, u.email, u.name, u.role, u.is_active, u.reminders_enabled, u.created_at, u.last_login_at
+    GROUP BY u.id, u.email, u.name, u.role, u.is_active, u.reminders_enabled, u.payment_reminders_enabled, u.created_at, u.last_login_at
     ORDER BY u.created_at, u.id`);
 
   const [subs] = await pool.query('SELECT user_id, amount, shared_with, billing_cycle FROM subscriptions WHERE is_active = 1');
@@ -91,16 +91,18 @@ router.get('/users/:id/password', (req, res) => {
 
 // ---- Test-E-Mail: Beispiel-Erinnerung an den angemeldeten Admin ----
 router.post('/test-mail', async (req, res) => {
-  const [rows] = await pool.query(
-    'SELECT * FROM subscriptions WHERE user_id = ? AND is_active = 1 AND notice_period_days IS NOT NULL',
-    [req.user.id]
-  );
-  let items = rows.map((s) => ({ sub: enrich(s), stage: 7 })).sort((a, b) => a.sub.cancelBy - b.sub.cancelBy).slice(0, 3);
+  const [rows] = await pool.query('SELECT * FROM subscriptions WHERE user_id = ? AND is_active = 1', [req.user.id]);
+  const subs = rows.map((s) => enrich(s));
+  const cancels = subs.filter((s) => s.cancelBy && !s.cancelPassed).sort((a, b) => a.cancelBy - b.cancelBy).slice(0, 3)
+    .map((sub) => ({ sub, kind: 'cancel', due: sub.cancelBy, stage: 7 }));
+  const payments = subs.filter((s) => s.nextPayment).sort((a, b) => a.nextPayment - b.nextPayment).slice(0, 3)
+    .map((sub) => ({ sub, kind: 'payment', due: sub.nextPayment, stage: 7 }));
+  let items = [...cancels, ...payments];
   if (!items.length) {
-    // Ohne eigene Fristen ein erfundenes Beispiel verwenden
-    const nextPayment = new Date();
-    nextPayment.setDate(nextPayment.getDate() + 37); // Frist damit in 7 Tagen
-    items = [{ sub: enrich({ id: 0, name: 'Beispiel-Abo', amount: '9.90', billing_cycle: 'monthly', next_payment_date: formatISO(nextPayment), notice_period_days: 30 }), stage: 7 }];
+    // Ohne eigene Termine ein erfundenes Beispiel verwenden
+    const inDays = (n) => { const d = today(); d.setDate(d.getDate() + n); return formatISO(d); };
+    const sample = enrich({ id: 0, name: 'Beispiel-Abo', amount: '9.90', billing_cycle: 'monthly', next_payment_date: inDays(14), cancel_by_date: inDays(7) });
+    items = [{ sub: sample, kind: 'cancel', due: sample.cancelBy, stage: 7 }, { sub: sample, kind: 'payment', due: sample.nextPayment, stage: 14 }];
   }
 
   try {
@@ -134,16 +136,19 @@ router.post('/users/:id/toggle-active', async (req, res) => {
   res.redirect(`${res.locals.base}/admin/users`);
 });
 
-// Erinnerungen duerfen auch fuer das eigene Konto umgeschaltet werden (kein Aussperr-Risiko)
+// Erinnerungen duerfen auch fuer das eigene Konto umgeschaltet werden (kein Aussperr-Risiko).
+// kind=payment schaltet die Zahlungs-Erinnerungen, sonst die Kuendigungsfristen.
 router.post('/users/:id/toggle-reminders', async (req, res) => {
-  const [rows] = await pool.query('SELECT id, name, reminders_enabled FROM users WHERE id = ?', [Number(req.params.id)]);
+  const payment = req.body.kind === 'payment';
+  const column = payment ? 'payment_reminders_enabled' : 'reminders_enabled';
+  const [rows] = await pool.query(`SELECT id, name, ${column} AS enabled FROM users WHERE id = ?`, [Number(req.params.id)]);
   const user = rows[0];
   if (!user) {
     req.flash('error', 'Benutzer nicht gefunden.');
   } else {
-    const enabled = user.reminders_enabled ? 0 : 1;
-    await pool.query('UPDATE users SET reminders_enabled = ? WHERE id = ?', [enabled, user.id]);
-    req.flash('success', `E-Mail-Erinnerungen für ${user.name} sind jetzt ${enabled ? 'eingeschaltet' : 'ausgeschaltet'}.`);
+    const enabled = user.enabled ? 0 : 1;
+    await pool.query(`UPDATE users SET ${column} = ? WHERE id = ?`, [enabled, user.id]);
+    req.flash('success', `${payment ? 'Zahlungs-Erinnerungen' : 'Fristen-Erinnerungen'} für ${user.name} sind jetzt ${enabled ? 'eingeschaltet' : 'ausgeschaltet'}.`);
   }
   res.redirect(`${res.locals.base}/admin/users`);
 });

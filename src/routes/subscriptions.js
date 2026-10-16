@@ -1,6 +1,6 @@
 const express = require('express');
 const pool = require('../db');
-const { CYCLES, enrich, forecast, formatISO, today } = require('../billing');
+const { CYCLES, enrich, forecast, formatISO, parseDate, today } = require('../billing');
 const { requireLogin } = require('../middleware/auth');
 const fmt = require('../format');
 const { toCsv } = require('../csv');
@@ -29,6 +29,11 @@ function notFound(res) {
   return res.status(404).render('error', { title: 'Nicht gefunden', message: 'Dieses Abo existiert nicht.' });
 }
 
+// Echtes Kalenderdatum im Format JJJJ-MM-TT (lehnt z. B. 2026-02-31 ab)
+function isValidDate(value) {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) && formatISO(parseDate(value)) === value;
+}
+
 // Validiert Formulardaten und liefert { values, error, data }
 function parseForm(body, categories) {
   const values = {
@@ -37,15 +42,14 @@ function parseForm(body, categories) {
     shared_with: String(body.shared_with ?? '1').trim() || '1',
     billing_cycle: String(body.billing_cycle || ''),
     category_id: body.category_id ? Number(body.category_id) : null,
-    next_payment_date: String(body.next_payment_date || ''),
-    notice_period_days: String(body.notice_period_days ?? '').trim(),
+    next_payment_date: String(body.next_payment_date || '').trim(),
+    cancel_by_date: String(body.cancel_by_date || '').trim(),
     is_active: body.is_active === '1' ? 1 : 0,
     notes: String(body.notes || '').trim(),
   };
 
   let error = null;
   const amount = Number(values.amount);
-  const notice = values.notice_period_days === '' ? null : Number(values.notice_period_days);
   const sharedWith = Number(values.shared_with);
 
   if (!values.name || values.name.length > 120) error = 'Bitte gib einen Namen an (max. 120 Zeichen).';
@@ -53,14 +57,22 @@ function parseForm(body, categories) {
   else if (!Number.isInteger(sharedWith) || sharedWith < 1 || sharedWith > 20) error = 'Geteilt mit: bitte eine Zahl von 1 bis 20 angeben (1 = nicht geteilt).';
   else if (!CYCLES[values.billing_cycle]) error = 'Bitte wähle einen Abrechnungszyklus.';
   else if (values.category_id !== null && !categories.some((c) => c.id === values.category_id)) error = 'Unbekannte Kategorie.';
-  else if (!/^\d{4}-\d{2}-\d{2}$/.test(values.next_payment_date) || Number.isNaN(Date.parse(values.next_payment_date))) error = 'Bitte gib ein gültiges Zahlungsdatum an.';
-  else if (notice !== null && (!Number.isInteger(notice) || notice < 0 || notice > 365)) error = 'Die Kündigungsfrist muss zwischen 0 und 365 Tagen liegen.';
+  else if (!values.next_payment_date && values.billing_cycle !== 'once') error = 'Bitte gib das Datum der nächsten Zahlung an (leer lassen geht nur bei „Einmalig“).';
+  else if (values.next_payment_date && !isValidDate(values.next_payment_date)) error = 'Bitte gib ein gültiges Zahlungsdatum an.';
+  else if (values.cancel_by_date && !isValidDate(values.cancel_by_date)) error = 'Bitte gib ein gültiges Datum für „Kündigen bis“ an.';
   else if (values.notes.length > 500) error = 'Notizen dürfen maximal 500 Zeichen lang sein.';
 
   return {
     values,
     error,
-    data: { ...values, amount, shared_with: sharedWith, notice_period_days: notice, notes: values.notes || null },
+    data: {
+      ...values,
+      amount,
+      shared_with: sharedWith,
+      next_payment_date: values.next_payment_date || null,
+      cancel_by_date: values.cancel_by_date || null,
+      notes: values.notes || null,
+    },
   };
 }
 
@@ -73,7 +85,8 @@ router.get('/dashboard', async (req, res) => {
   const monthlyTotal = active.reduce((sum, s) => sum + s.monthly, 0);
 
   const byCategory = new Map();
-  for (const s of active) {
+  // Einmalige Zahlungen zaehlen nicht zu den laufenden Kosten
+  for (const s of active.filter((x) => x.monthly > 0)) {
     const key = s.category_name || 'Ohne Kategorie';
     const entry = byCategory.get(key) || { name: key, color: s.category_color || '#9ca3af', total: 0 };
     entry.total += s.monthly;
@@ -84,14 +97,14 @@ router.get('/dashboard', async (req, res) => {
     .sort((a, b) => b.total - a.total);
 
   const upcoming = active
-    .filter((s) => s.daysUntilPayment <= 30)
+    .filter((s) => s.nextPayment && s.daysUntilPayment <= 30)
     .sort((a, b) => a.nextPayment - b.nextPayment);
 
   const deadlines = active
-    .filter((s) => s.cancelBy && s.daysUntilCancel <= 30)
+    .filter((s) => s.cancelBy && s.daysUntilCancel >= 0 && s.daysUntilCancel <= 30)
     .sort((a, b) => a.cancelBy - b.cancelBy);
 
-  const mostExpensive = [...active].sort((a, b) => b.monthly - a.monthly).slice(0, 5);
+  const mostExpensive = active.filter((s) => s.monthly > 0).sort((a, b) => b.monthly - a.monthly).slice(0, 5);
 
   const months = forecast(rows);
   const yearTotal = months.reduce((sum, m) => sum + m.total, 0);
@@ -191,12 +204,10 @@ const EXPORT_COLUMNS = [
   { header: 'Geteilt mit (Personen)', value: (s) => s.share },
   { header: 'Dein Anteil (CHF)', value: (s) => money(s.myAmount).toFixed(2) },
   { header: 'Zyklus', value: (s) => s.cycleLabel },
-  { header: 'Pro Monat, dein Anteil (CHF)', value: (s) => money(s.monthly).toFixed(2) },
-  { header: 'Pro Jahr, dein Anteil (CHF)', value: (s) => money(s.monthly * 12).toFixed(2) },
-  { header: 'Nächste Zahlung', value: (s) => (s.is_active ? fmt.date(s.nextPayment) : null) },
-  { header: 'Kündigungsfrist (Tage)', value: (s) => s.notice_period_days },
-  { header: 'Kündigen bis', value: (s) => (s.is_active && s.cancelBy ? fmt.date(s.cancelBy) : null) },
-  { header: 'Kündbar zum', value: (s) => (s.is_active && s.cancelEffective ? fmt.date(s.cancelEffective) : null) },
+  { header: 'Pro Monat, dein Anteil (CHF)', value: (s) => (s.recurring ? money(s.monthly).toFixed(2) : null) },
+  { header: 'Pro Jahr, dein Anteil (CHF)', value: (s) => (s.recurring ? money(s.monthly * 12).toFixed(2) : null) },
+  { header: 'Nächste Zahlung', value: (s) => (s.is_active && s.nextPayment ? fmt.date(s.nextPayment) : null) },
+  { header: 'Kündigen bis', value: (s) => (s.cancelBy ? fmt.date(s.cancelBy) : null) },
   { header: 'Status', value: (s) => (s.is_active ? 'aktiv' : 'inaktiv') },
   { header: 'Notizen', value: (s) => s.notes },
 ];
@@ -215,7 +226,7 @@ router.get('/subscriptions/new', async (req, res) => {
   res.render('subscriptions/form', {
     title: 'Neues Abo',
     sub: null,
-    values: { billing_cycle: 'monthly', is_active: 1, shared_with: 1, next_payment_date: formatISO(today()) },
+    values: { billing_cycle: 'monthly', is_active: 1, shared_with: 1, next_payment_date: formatISO(today()), cancel_by_date: '' },
     categories: await loadCategories(),
     cycles: CYCLES,
     error: null,
@@ -230,10 +241,10 @@ router.post('/subscriptions', async (req, res) => {
   }
   await pool.query(
     `INSERT INTO subscriptions
-       (user_id, category_id, name, amount, shared_with, billing_cycle, next_payment_date, notice_period_days, is_active, notes)
+       (user_id, category_id, name, amount, shared_with, billing_cycle, next_payment_date, cancel_by_date, is_active, notes)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [req.user.id, data.category_id, data.name, data.amount, data.shared_with, data.billing_cycle, data.next_payment_date,
-      data.notice_period_days, data.is_active, data.notes]
+      data.cancel_by_date, data.is_active, data.notes]
   );
   req.flash('success', `„${data.name}“ wurde hinzugefügt.`);
   res.redirect(`${res.locals.base}/subscriptions`);
@@ -246,7 +257,7 @@ router.get('/subscriptions/:id/edit', async (req, res) => {
   res.render('subscriptions/form', {
     title: `${sub.name} bearbeiten`,
     sub,
-    values: { ...sub, notice_period_days: sub.notice_period_days ?? '' },
+    values: { ...sub, next_payment_date: sub.next_payment_date || '', cancel_by_date: sub.cancel_by_date || '' },
     categories: await loadCategories(),
     cycles: CYCLES,
     error: null,
@@ -264,10 +275,10 @@ router.post('/subscriptions/:id', async (req, res) => {
   }
   await pool.query(
     `UPDATE subscriptions SET category_id = ?, name = ?, amount = ?, shared_with = ?, billing_cycle = ?, next_payment_date = ?,
-       notice_period_days = ?, is_active = ?, notes = ?
+       cancel_by_date = ?, is_active = ?, notes = ?
      WHERE id = ? AND user_id = ?`,
     [data.category_id, data.name, data.amount, data.shared_with, data.billing_cycle, data.next_payment_date,
-      data.notice_period_days, data.is_active, data.notes, sub.id, req.user.id]
+      data.cancel_by_date, data.is_active, data.notes, sub.id, req.user.id]
   );
   req.flash('success', `„${data.name}“ wurde gespeichert.`);
   res.redirect(`${res.locals.base}/subscriptions`);

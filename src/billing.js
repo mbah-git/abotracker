@@ -1,10 +1,12 @@
 // Umrechnung und Datumslogik fuer Abrechnungszyklen
 
 const CYCLES = {
-  weekly: { label: 'Wöchentlich', perMonth: 52 / 12 },
-  monthly: { label: 'Monatlich', perMonth: 1 },
-  quarterly: { label: 'Quartalsweise', perMonth: 1 / 3 },
-  yearly: { label: 'Jährlich', perMonth: 1 / 12 },
+  weekly: { label: 'Wöchentlich', perMonth: 52 / 12, days: 7 },
+  monthly: { label: 'Monatlich', perMonth: 1, days: 30 },
+  quarterly: { label: 'Quartalsweise', perMonth: 1 / 3, days: 91 },
+  yearly: { label: 'Jährlich', perMonth: 1 / 12, days: 365 },
+  // Einmalige Zahlung: zaehlt nicht zu den laufenden Monatskosten, Zahlungsdatum ist optional
+  once: { label: 'Einmalig', perMonth: 0, days: Infinity },
 };
 
 // Anzahl Personen, mit denen ein Abo geteilt wird (mind. 1)
@@ -19,7 +21,7 @@ function monthlyCost(amount, cycle, sharedWith = 1) {
 
 // Datumswerte als "YYYY-MM-DD" in lokaler Zeit behandeln
 function parseDate(str) {
-  const [y, m, d] = str.split('-').map(Number);
+  const [y, m, d] = String(str).slice(0, 10).split('-').map(Number);
   return new Date(y, m - 1, d);
 }
 
@@ -42,17 +44,22 @@ function addMonthsClamped(date, months, anchorDay) {
   return target;
 }
 
-// Naechster Termin nach date gemaess Zyklus; anchorDay haelt z. B. den 31. ueber kurze Monate hinweg
+// Naechster Termin nach date gemaess Zyklus; anchorDay haelt z. B. den 31. ueber kurze Monate hinweg.
+// Bei einmaligen Zahlungen gibt es keinen weiteren Termin (null).
 function stepCycle(date, cycle, anchorDay) {
+  if (cycle === 'once') return null;
   if (cycle === 'weekly') return new Date(date.getFullYear(), date.getMonth(), date.getDate() + 7);
   if (cycle === 'monthly') return addMonthsClamped(date, 1, anchorDay);
   if (cycle === 'quarterly') return addMonthsClamped(date, 3, anchorDay);
   return addMonthsClamped(date, 12, anchorDay);
 }
 
-// Liefert das naechste Zahlungsdatum >= heute, ausgehend vom gespeicherten Datum.
+// Naechstes Zahlungsdatum >= ref, ausgehend vom gespeicherten Datum.
+// null, wenn kein Datum gespeichert ist oder eine einmalige Zahlung schon vorbei ist.
 function nextPaymentDate(storedDate, cycle, ref = today()) {
+  if (!storedDate) return null;
   let date = parseDate(storedDate);
+  if (cycle === 'once') return date >= ref ? date : null;
   const anchorDay = date.getDate();
   let guard = 0;
   while (date < ref && guard++ < 1000) date = stepCycle(date, cycle, anchorDay);
@@ -66,19 +73,8 @@ function daysBetween(from, to) {
 // Reichert eine Abo-Zeile um berechnete Felder an
 function enrich(sub, ref = today()) {
   const next = nextPaymentDate(sub.next_payment_date, sub.billing_cycle, ref);
-  let cancelBy = null;
-  let cancelEffective = null;
-  if (sub.notice_period_days != null) {
-    // Frist fuer den naechsten Termin schon verstrichen? Dann zaehlt der Folgetermin.
-    let target = next;
-    for (let i = 0; i < 1000; i++) {
-      cancelBy = new Date(target.getFullYear(), target.getMonth(), target.getDate() - sub.notice_period_days);
-      if (cancelBy >= ref) break;
-      const dayAfter = new Date(target.getFullYear(), target.getMonth(), target.getDate() + 1);
-      target = nextPaymentDate(sub.next_payment_date, sub.billing_cycle, dayAfter);
-    }
-    cancelEffective = target;
-  }
+  const cancelBy = sub.cancel_by_date ? parseDate(sub.cancel_by_date) : null;
+  const daysUntilCancel = cancelBy ? daysBetween(ref, cancelBy) : null;
   const share = shareOf(sub);
   return {
     ...sub,
@@ -86,21 +82,23 @@ function enrich(sub, ref = today()) {
     share,
     myAmount: Number(sub.amount) / share,
     cycleLabel: CYCLES[sub.billing_cycle].label,
+    recurring: sub.billing_cycle !== 'once',
     monthly: monthlyCost(sub.amount, sub.billing_cycle, share),
     nextPayment: next,
-    daysUntilPayment: daysBetween(ref, next),
+    daysUntilPayment: next ? daysBetween(ref, next) : null,
     cancelBy,
-    cancelEffective,
-    daysUntilCancel: cancelBy ? daysBetween(ref, cancelBy) : null,
+    daysUntilCancel,
+    cancelPassed: daysUntilCancel != null && daysUntilCancel < 0,
   };
 }
 
 // Alle Zahlungstermine eines Abos zwischen from und to (jeweils inklusive)
 function paymentsBetween(sub, from, to) {
+  if (!sub.next_payment_date) return [];
   const anchorDay = parseDate(sub.next_payment_date).getDate();
   const dates = [];
   let date = nextPaymentDate(sub.next_payment_date, sub.billing_cycle, from);
-  while (date <= to && dates.length < 60) {
+  while (date && date <= to && dates.length < 60) {
     dates.push(date);
     date = stepCycle(date, sub.billing_cycle, anchorDay);
   }
@@ -136,4 +134,21 @@ function forecast(subs, months = 12, ref = today()) {
   return buckets;
 }
 
-module.exports = { CYCLES, monthlyCost, shareOf, stepCycle, nextPaymentDate, paymentsBetween, forecast, enrich, formatISO, parseDate, today };
+// Nur fuer die einmalige Umstellung: Frist aus der frueheren Angabe "Kuendigungsfrist in Tagen"
+// (Tage vor der naechsten Zahlung; war sie schon verstrichen, zaehlte der Folgetermin)
+function legacyCancelBy(sub, ref = today()) {
+  if (sub.notice_period_days == null || !sub.next_payment_date) return null;
+  let target = nextPaymentDate(sub.next_payment_date, sub.billing_cycle, ref);
+  for (let i = 0; target && i < 1000; i++) {
+    const cancelBy = new Date(target.getFullYear(), target.getMonth(), target.getDate() - sub.notice_period_days);
+    if (cancelBy >= ref) return cancelBy;
+    const dayAfter = new Date(target.getFullYear(), target.getMonth(), target.getDate() + 1);
+    target = nextPaymentDate(sub.next_payment_date, sub.billing_cycle, dayAfter);
+  }
+  return null;
+}
+
+module.exports = {
+  CYCLES, monthlyCost, shareOf, stepCycle, nextPaymentDate, paymentsBetween, forecast,
+  enrich, legacyCancelBy, daysBetween, formatISO, parseDate, today,
+};

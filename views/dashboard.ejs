@@ -102,7 +102,7 @@
 
   <section class="card">
     <h2>Kündigungsfristen <span class="muted small">30 Tage</span></h2>
-    <p class="muted small card-hint">E-Mail-Erinnerungen: <%= currentUser.reminders_enabled ? 'an' : 'aus' %> · <a href="<%= base %>/account">ändern</a></p>
+    <p class="muted small card-hint">E-Mail-Erinnerungen: Fristen <%= currentUser.reminders_enabled ? 'an' : 'aus' %> · Zahlungen <%= currentUser.payment_reminders_enabled ? 'an' : 'aus' %> · <a href="<%= base %>/account">ändern</a></p>
     <% if (!deadlines.length) { %>
       <p class="muted">Keine Kündigungsfristen in den nächsten 30 Tagen.</p>
     <% } else { %>
@@ -111,7 +111,7 @@
           <li>
             <div>
               <strong><%= s.name %></strong>
-              <span class="muted small">kündbar zum <%= fmt.date(s.cancelEffective) %></span>
+              <span class="muted small"><%= fmt.money(s.amount) %> · <%= s.cycleLabel.toLowerCase() %></span>
             </div>
             <span class="badge <%= s.daysUntilCancel <= 7 ? 'badge-warn' : '' %>">bis <%= fmt.date(s.cancelBy) %> · <%= fmt.relDays(s.daysUntilCancel) %></span>
           </li>

@@ -4,7 +4,7 @@ const config = require('../src/config');
 const { migrate } = require('../src/migrations');
 
 async function main() {
-  const conn = await mysql.createConnection(config.db);
+  const conn = await mysql.createConnection({ ...config.db, dateStrings: true });
   try {
     for (const change of await migrate(conn)) console.log(`✓ ${change}`);
     console.log(`Schema in Datenbank "${config.db.database}" ist aktuell.`);

@@ -98,12 +98,15 @@
             <% if (s.share > 1) { %><div class="muted small" title="Geteilt mit <%= s.share %> Personen">÷ <%= s.share %> = <%= fmt.money(s.myAmount) %></div><% } %>
           </div></td>
           <td data-label="Zyklus"><%= s.cycleLabel %></td>
-          <td data-label="pro Monat" class="num"><%= fmt.money(s.monthly) %></td>
-          <td data-label="Nächste Zahlung"><%= s.is_active ? fmt.date(s.nextPayment) : '–' %></td>
+          <td data-label="pro Monat" class="num"><% if (s.recurring) { %><%= fmt.money(s.monthly) %><% } else { %><span class="muted">einmalig</span><% } %></td>
+          <td data-label="Nächste Zahlung"><%= s.is_active && s.nextPayment ? fmt.date(s.nextPayment) : '–' %></td>
           <td data-label="Kündigen bis">
-            <% if (s.is_active && s.cancelBy) { %>
+            <% if (!s.cancelBy) { %><span class="muted">–</span>
+            <% } else if (s.cancelPassed || !s.is_active) { %>
+              <span class="muted" title="<%= s.cancelPassed ? 'Diese Frist ist abgelaufen' : 'Abo ist inaktiv' %>"><%= fmt.date(s.cancelBy) %><%= s.cancelPassed ? ' (vorbei)' : '' %></span>
+            <% } else { %>
               <span class="<%= s.daysUntilCancel <= 7 ? 'text-warn' : '' %>"><%= fmt.date(s.cancelBy) %></span>
-            <% } else { %><span class="muted">–</span><% } %>
+            <% } %>
           </td>
           <td class="actions-cell"><div class="actions">
             <a class="btn btn-sm" href="<%= base %>/subscriptions/<%= s.id %>/edit">Bearbeiten</a>

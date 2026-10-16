@@ -50,6 +50,18 @@
     el.addEventListener('click', function () { window.location.reload(); });
   });
 
+  // Abo-Formular: bei "Einmalig" darf das Zahlungsdatum leer bleiben
+  var cycleSelect = document.querySelector('select[name="billing_cycle"]');
+  var paymentInput = document.querySelector('input[name="next_payment_date"]');
+  var onceHint = document.querySelector('[data-once-hint]');
+  if (cycleSelect && paymentInput) {
+    cycleSelect.addEventListener('change', function () {
+      var once = cycleSelect.value === 'once';
+      paymentInput.required = !once;
+      if (onceHint) onceHint.hidden = !once;
+    });
+  }
+
   // Filter in "Meine Abos": Auswahllisten sofort anwenden
   document.querySelectorAll('select[data-autosubmit]').forEach(function (el) {
     el.addEventListener('change', function () { el.form.submit(); });

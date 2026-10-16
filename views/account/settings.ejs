@@ -8,10 +8,15 @@
     <h2 class="section-title">E-Mail-Erinnerungen</h2>
     <label class="checkbox">
       <input type="checkbox" name="reminders_enabled" value="1" <%= currentUser.reminders_enabled ? 'checked' : '' %>>
-      Vor Kündigungsfristen per E-Mail erinnern
+      Vor Kündigungsfristen erinnern
     </label>
-    <p class="muted small">Du bekommst 7 Tage und 1 Tag vor jeder Kündigungsfrist eine E-Mail an <%= currentUser.email %>.
-      Das gilt für aktive Abos, bei denen eine Kündigungsfrist eingetragen ist.</p>
+    <label class="checkbox">
+      <input type="checkbox" name="payment_reminders_enabled" value="1" <%= currentUser.payment_reminders_enabled ? 'checked' : '' %>>
+      Vor der nächsten Zahlung erinnern
+    </label>
+    <p class="muted small">Erinnerungen kommen 14 Tage, 7 Tage und 1 Tag vorher an <%= currentUser.email %>,
+      gesammelt in höchstens einer E-Mail pro Tag. Das gilt für aktive Abos mit eingetragenem Datum.
+      Bei wöchentlichen Abos gibt es vor Zahlungen nur die Erinnerung 1 Tag vorher.</p>
     <div class="form-actions">
       <button type="submit" class="btn btn-primary">Speichern</button>
     </div>
